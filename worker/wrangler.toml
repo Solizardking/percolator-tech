@@ -1,0 +1,8 @@
+# Live apex worker. Do not wrangler-deploy this file without the existing
+# Workers Assets bundle and secret bindings — that would drop the Vite app.
+# Legal-page deploys update worker script content only and keep ASSETS + secrets.
+name = "percolator-tech"
+main = "src/worker.js"
+compatibility_date = "2026-11-09"
+account_id = "7640372571bf2d69ed5d58a6a6d8929e"
+workers_dev = false
