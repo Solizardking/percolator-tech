@@ -72,3 +72,27 @@ IP_HASH_SALT=dev node server.js
 ## Domain
 
 Point `percolator.tech` and `www.percolator.tech` at the Render `*.onrender.com` host (Cloudflare DNS; add custom domains in the Render dashboard). Apex may need a Cloudflare CNAME flatten / CNAME to the onrender host.
+
+
+## Cloudflare Workers (live)
+
+Deployed as Worker `percolator-tech` on account `7640372571bf2d69ed5d58a6a6d8929e`.
+
+- Live: https://percolator.tech/feed (full HTML) and https://percolator.tech/api/feed (JSON)
+- Also: https://www.percolator.tech/feed and workers.dev URL
+- Custom domains attached via `wrangler.toml` `[[routes]] custom_domain = true`
+- Server-side `GITHUB_TOKEN` Worker secret (rate limits only; never client-side)
+- Kani/keeper: `public/ops-snapshot.json` — refresh with `python3 scripts/refresh-ops-snapshot.py` then `npx wrangler deploy`
+
+```bash
+cd /workspace/percolator-tech
+python3 scripts/refresh-ops-snapshot.py
+npx wrangler deploy
+```
+
+## Live deploy
+
+- **Service:** https://percolator-tech.onrender.com (Render free web `percolator-tech`, id `srv-dbou14c9v7es738d0i3g`)
+- **KV:** `percolator-tech-kv` (`red-dbou01u1egvs7382s710`) for install events
+- **Deploy source:** Render could not clone private `Solizardking/percolator-tech` (GitHub App not granted on that repo). Live deploys come from public `themusebook/x402-messaging` branch `percolator-tech-site`, directory `percolator-tech/`. This private repo stays the canonical source — grant Render access to it (or mirror) to switch the service repo URL.
+- **Free Postgres:** blocked (workspace already has `musebot-install-counter-db`, expires **2026-11-24 America/New_York**). App still supports `DATABASE_URL` + `perc_` tables if a DB becomes available.

@@ -1,3 +1,5 @@
+# Canonical Blueprint for when Render's GitHub App can read this private repo.
+# Until then, live deploys use themusebook/x402-messaging@percolator-tech-site.
 services:
   - type: web
     name: percolator-tech
@@ -21,9 +23,3 @@ services:
           name: percolator-tech-kv
           type: keyvalue
           property: connectionString
-
-# Key Value instance already created as percolator-tech-kv (free).
-# Free Postgres could not be created (workspace already has one free DB:
-# musebot-install-counter-db, expires 2026-11-24). Redis/KV used instead.
-# If a dedicated Postgres becomes available later, set DATABASE_URL and
-# the app will prefer it when REDIS_URL is unset.
