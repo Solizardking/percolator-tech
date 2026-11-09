@@ -1,16 +1,6 @@
-// Better Auth for https://percolator.tech, mounted at the default basePath /api/auth.
-// This module is wired on the feat/better-auth branch only. Do not set
-// BETTER_AUTH_API_KEY or BETTER_AUTH_SECRET in source, wrangler vars, or
-// committed files. Pass them as Worker secrets at an approved production
-// deploy. Do not print those values.
-import { betterAuth } from "better-auth";
-import { sentinel } from "@better-auth/infra";
-
-const TRUSTED_ORIGINS = [
-  "https://percolator.tech",
-  "https://www.percolator.tech",
-];
-
+// Proxy /api/auth/* to the Railway Better Auth service.
+// The Worker stays a reverse proxy so first-party cookies stay on
+// percolator.tech. Do not put secrets in this file.
 export function isAuthPath(pathname) {
   return pathname === "/api/auth" || pathname.startsWith("/api/auth/");
 }
@@ -25,86 +15,71 @@ export function authNotConfigured() {
   });
 }
 
-/**
- * @param {{ AUTH_DB?: D1Database, BETTER_AUTH_SECRET?: string, BETTER_AUTH_API_KEY?: string, BETTER_AUTH_URL?: string }} env
- */
-export function createAuth(env) {
-  return betterAuth({
-    baseURL: env.BETTER_AUTH_URL || "https://percolator.tech",
-    basePath: "/api/auth",
-    secret: env.BETTER_AUTH_SECRET,
-    database: env.AUTH_DB,
-    trustedOrigins: TRUSTED_ORIGINS,
-    emailAndPassword: {
-      enabled: true,
-      // No email provider is configured yet. Do not require verification
-      // until an owner-approved mail transport exists.
-      requireEmailVerification: false,
-    },
-    advanced: {
-      useSecureCookies: true,
-      defaultCookieAttributes: {
-        sameSite: "lax",
-        secure: true,
-        httpOnly: true,
-      },
-    },
-    plugins: [
-      sentinel({
-        // Workers do not automatically expose wrangler secrets on process.env.
-        // Read the binding from env. Never hard-code the key.
-        apiKey: env.BETTER_AUTH_API_KEY,
-        sentinelHeaders: "modern",
-        // Start in log / challenge. Tune from the Better Auth dashboard
-        // before flipping high-impact checks to block.
-        security: {
-          credentialStuffing: {
-            enabled: true,
-            action: "challenge",
-            thresholds: { challenge: 3, block: 8 },
-            windowSeconds: 3600,
-            cooldownSeconds: 900,
-          },
-          compromisedPassword: {
-            enabled: true,
-            action: "challenge",
-            minBreachCount: 1,
-          },
-          emailValidation: {
-            enabled: true,
-            strictness: "medium",
-            action: "log",
-          },
-          emailNormalization: { enabled: true },
-          impossibleTravel: {
-            enabled: true,
-            maxSpeedKmh: 1000,
-            action: "log",
-          },
-          velocity: {
-            enabled: true,
-            action: "challenge",
-            thresholds: { challenge: 10, block: 20 },
-            windowSeconds: 3600,
-          },
-          botBlocking: { action: "challenge" },
-          suspiciousIpBlocking: { action: "log" },
-          freeTrialAbuse: { enabled: true, action: "log" },
-          // Geo-blocking is off until there is an explicit country policy.
-          // Stale-user email notifications are off until a mail transport exists.
-        },
-      }),
-    ],
-  });
-}
+const HOP_BY_HOP = new Set([
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailers",
+  "transfer-encoding",
+  "upgrade",
+  "host",
+  "cf-connecting-ip",
+  "cf-ray",
+  "cf-visitor",
+  "cf-ew-via",
+  "cf-worker",
+  "content-length",
+]);
 
 /**
- * Handle /api/auth/* when AUTH_DB and BETTER_AUTH_SECRET are bound.
- * Missing config returns 503 so a partial deploy cannot look like a working signup.
+ * @param {Request} request
+ * @param {{ AUTH_UPSTREAM?: string }} env
  */
-export function handleAuth(request, env) {
-  if (!env.AUTH_DB || !env.BETTER_AUTH_SECRET) {
-    return authNotConfigured();
+export async function handleAuth(request, env) {
+  const upstream = (env.AUTH_UPSTREAM || "").replace(/\/+$/, "");
+  if (!upstream) return authNotConfigured();
+
+  const inbound = new URL(request.url);
+  const target = new URL(inbound.pathname + inbound.search, upstream);
+  const headers = new Headers();
+  for (const [key, value] of request.headers) {
+    if (HOP_BY_HOP.has(key.toLowerCase())) continue;
+    headers.append(key, value);
   }
-  return createAuth(env).handler(request);
+  headers.set("x-forwarded-host", inbound.host);
+  headers.set("x-forwarded-proto", inbound.protocol.replace(":", "") || "https");
+  const clientIp =
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for") ||
+    "";
+  if (clientIp) headers.set("x-forwarded-for", clientIp);
+
+  const init = {
+    method: request.method,
+    headers,
+    redirect: "manual",
+  };
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = request.body;
+    init.duplex = "half";
+  }
+
+  const resp = await fetch(target, init);
+  const outHeaders = new Headers(resp.headers);
+  const location = outHeaders.get("location");
+  if (location) {
+    try {
+      const loc = new URL(location, target);
+      if (loc.host === new URL(upstream).host) {
+        loc.protocol = inbound.protocol;
+        loc.host = inbound.host;
+        outHeaders.set("location", loc.toString());
+      }
+    } catch {
+      // leave upstream Location unchanged if it is not a valid URL
+    }
+  }
+  return new Response(resp.body, { status: resp.status, headers: outHeaders });
 }

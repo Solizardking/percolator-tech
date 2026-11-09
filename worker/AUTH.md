@@ -1,81 +1,58 @@
-# Better Auth on percolator.tech (draft, not production)
+# Better Auth on percolator.tech
 
-User accounts are planned to live on `https://percolator.tech` with Better Auth mounted at the default `basePath` `/api/auth`. This branch wires the server, the `/api/auth` Worker route, and the browser client. It is **not** merged to production and must not be deployed until the owner approves an auth deploy.
+User accounts live on `https://percolator.tech` with Better Auth mounted at the default `basePath` `/api/auth`. The auth application itself runs on Railway (project `percolator-tech`, id `4d0c3382-a848-453a-944a-4528662c977a`; service `percolator-auth`, id `45d9f983-6b97-4d05-9934-0c79ef9e4acb`; environment `production`, id `cdce3d00-e97a-446f-97a4-1533abeecb20`) and stores records in Neon Postgres. The public Railway origin is `https://percolator-auth-production.up.railway.app`. The service listens on `PORT=3000` to match the Railway domain target port. The Cloudflare Worker at percolator.tech proxies `/api/auth` and `/api/auth/*` to that service so first-party cookies stay on the apex domain.
 
-## What is already wired
+## Why self-hosted Better Auth, not Neon Auth as the IdP
 
-- Server: `worker/src/auth.js` — `createAuth(env)` uses `betterAuth()` with `baseURL` `https://percolator.tech`, `basePath` `/api/auth`, `database: env.AUTH_DB` (Cloudflare D1, auto-detected; no custom adapter), and the `sentinel()` plugin from `@better-auth/infra`.
-- Route: `worker/src/worker.js` calls `handleAuth` for `/api/auth` and `/api/auth/*`. If `AUTH_DB` or `BETTER_AUTH_SECRET` is missing, the handler returns 503 and does not pretend signup works.
+The same Neon project also exposes Neon Auth (a hosted Better Auth instance) at `NEON_AUTH_URL` and a JWKS at `NEON_AUTH_JWKS_URL`. We still run our own Better Auth process on Railway because we need:
+
+- `baseURL` `https://percolator.tech` and `basePath` `/api/auth`
+- first-party session cookies on percolator.tech via the Worker proxy
+- the Sentinel plugin in log/challenge mode with `sentinelHeaders: "modern"`
+
+Neon Auth issues tokens under a different issuer than this service. This deploy does not verify Neon Auth JWTs as logins, because that would mix two user stores. The Neon Auth URL and JWKS are recorded as config on the Railway service for a later integration if we need one.
+
+## What is wired
+
+- Server: `auth-server/src/auth.js` and `auth-server/src/server.js` — `betterAuth()` with a `pg` Pool, `baseURL` `https://percolator.tech`, `basePath` `/api/auth`, and the `sentinel()` plugin from `@better-auth/infra`.
+- Migrations: `auth-server/scripts/migrate.js` uses `getMigrations` from `better-auth/db/migration`. There is no public `/migrate` route. Railway runs the script as a pre-deploy command.
+- Proxy: `worker/src/auth.js` forwards `/api/auth/*` to `env.AUTH_UPSTREAM` (the Railway origin). If `AUTH_UPSTREAM` is missing, the Worker returns 503.
 - Client: `worker/src/auth-client.js` — `createAuthClient` with `sentinelClient` from `@better-auth/infra/client`, `autoSolveChallenge: true`, and `sentinelHeaders: "modern"` (must match the server).
 
-## Database adapter and paid infra
+## Database and paid infra
 
-- Preferred adapter: **Cloudflare D1** via `database: env.AUTH_DB`. Better Auth 1.5+ treats a D1 binding as a first-class database. D1’s free tier is enough to start. This does **not** require paid Postgres.
-- Do not reuse or extend the Render free Postgres instance that already backs install-counter data (that instance expires 2026-11-24, America/New_York) without a separate approval.
-- Paid items that need owner approval before production auth:
+- Database: the owner-provided Neon Postgres instance, via `DATABASE_URL` on Railway. Do not print this value.
+- The Railway service is a normal small Node app in the existing workspace. Do not add paid Railway databases, volumes, or higher limits without approval.
+- Paid items that still need owner approval:
   - Better Auth Infrastructure (Sentinel is a pro-plan feature).
-  - Any paid D1 or Postgres upgrade, if free quota is not enough.
+  - Any paid Neon or Railway upgrade, if free or current quota is not enough.
   - An email/SMS provider if we later require verification or magic links (none is configured now).
   - Hosted wallet custody (not part of this design; wallets stay user-controlled).
 
-The D1 database itself is **not created** on this branch.
+## Secrets and config
 
-## Secrets
+Never print, commit, or put secrets in `wrangler.toml` `[vars]`, `railway.json`, or source.
 
-Never print, commit, or put these in `wrangler.toml` `[vars]` or source.
+Railway (auth service):
 
-- `BETTER_AUTH_SECRET` — session signing secret, Worker secret only.
-- `BETTER_AUTH_API_KEY` — Better Auth Infrastructure key, Worker secret only. Use the rotated key. Do not use a key that was pasted in chat. On Cloudflare Workers, pass it as `env.BETTER_AUTH_API_KEY` because `process.env` is not automatically populated the way it is in Node.
+- `DATABASE_URL` — Neon Postgres connection string (secret).
+- `BETTER_AUTH_SECRET` — session signing secret (secret).
+- `BETTER_AUTH_API_KEY` — Better Auth Infrastructure key, rotated value only (secret).
+- `BETTER_AUTH_URL` — `https://percolator.tech`.
+- `BETTER_AUTH_BASE_PATH` — `/api/auth`.
+- `NEON_AUTH_URL` and `NEON_AUTH_JWKS_URL` — public Neon Auth endpoints, recorded as config only.
+- `NODE_ENV` — `production`.
 
-Setting either value on the production host is an environment-variable change and must only happen as part of an approved percolator.tech auth deploy, then be reported.
+Cloudflare Worker:
 
-## What Sentinel does
+- `AUTH_UPSTREAM` — Railway public origin, no path (plain text). Do not put `BETTER_AUTH_SECRET` or `BETTER_AUTH_API_KEY` on the Worker.
 
-Sentinel is Better Auth’s abuse-protection plugin. It evaluates sign-in and sign-up (and related) traffic against:
+## Sentinel
 
-- credential stuffing (failed attempts per visitor, then PoW challenge or block)
-- impossible travel
-- optional geo-blocking
-- bot blocking
-- suspicious IPs
-- velocity / rate limits
-- free-trial / multi-account abuse via device fingerprint
-- compromised passwords (Have I Been Pwned, k-anonymity: only the first 5 characters of the password hash leave the server)
-- email validation and normalization
-- stale-account activity
+Sentinel is Better Auth’s abuse-protection plugin. It evaluates sign-in and sign-up (and related) traffic against credential stuffing, impossible travel, bots, suspicious IPs, velocity, free-trial / multi-account abuse via device fingerprint, compromised passwords (Have I Been Pwned, k-anonymity), and email validation / normalization.
 
-The browser plugin fingerprints a visitor id and can auto-solve Proof-of-Work challenges. Events are visible in the Better Auth Security dashboard. Telemetry goes to Better Auth infrastructure (`dash.better-auth.com`, `kv.better-auth.com`).
-
-## Risks
-
-- Device fingerprinting and visitor-id tracking.
-- False-positive challenges or blocks (VPNs, travel, shared IPs).
-- Geo-blocking can lock out legitimate users (left off until there is a country policy).
-- Email and traffic signals are sent to Better Auth infra.
-- PoW can add latency; missing `BETTER_AUTH_API_KEY` falls back to allow mode (documented Sentinel warning).
-- Header mismatch (`legacy` vs `modern`) or missing CORS expose/allow headers will break challenges on cross-origin clients.
-
-## Best practices (from Better Auth docs)
-
-1. Start with `log` (and `challenge` before `block`); tune thresholds from real traffic.
-2. Keep `sentinelHeaders: "modern"` on server and client (proxy-safe `X-Sentinel-*` names).
-3. Enable `autoSolveChallenge` on the client.
-4. For cross-origin browser clients, allow and expose the exact `X-Sentinel-*` header names; do not use `origin: "*"` with credentialed cookies.
-5. Monitor the Security dashboard; do not turn on admin email alerts until a mail transport exists.
-6. Never ship the API key in the client bundle.
-
-## Step-by-step setup (when an auth deploy is approved)
-
-1. Create a free-tier D1 database, suggested name `percolator-auth`. Bind it as `AUTH_DB`. Record that this is a new database, not paid Postgres.
-2. Generate a `BETTER_AUTH_SECRET` and set it as a Worker **secret**. Set `BETTER_AUTH_API_KEY` as a Worker **secret** using the rotated key only. Do not put either in `[vars]` or git. Report both as production env-var changes.
-3. Evaluate adding `compatibility_flags = ["nodejs_compat"]` if the Better Auth Worker bundle requires it; test `/`, `/feed`, `/api/health`, and legal pages still work.
-4. Run Better Auth programmatic migrations (`getMigrations` from `better-auth/db/migration`) against `AUTH_DB` from a Worker. Do not expose an unauthenticated `/migrate` route.
-5. Deploy this Worker **script plus** the new binding/secrets, keeping existing ASSETS and Privy/GitHub bindings. Do not wrangler-deploy without the Assets bundle.
-6. Confirm `GET/POST https://percolator.tech/api/auth/*` is served by Better Auth (no longer 404/503).
-7. Import `authClient` from `worker/src/auth-client.js` in the site UI.
-8. Update the Privacy Policy before collecting emails or account data.
-9. Watch Sentinel in log/challenge mode, then tighten actions.
+The browser plugin fingerprints a visitor id and can auto-solve Proof-of-Work challenges. Telemetry goes to Better Auth infrastructure (`dash.better-auth.com`, `kv.better-auth.com`). This deploy starts in log / challenge mode, not block.
 
 ## Privacy
 
-Account email, password hashes, sessions, and Sentinel visitor identifiers are not collected in production today (`/api/auth` is not live). The published Privacy Policy says so and must be revised before this lands.
+The published Privacy Policy must describe account data (email, password hashes, sessions), Neon and Railway as recipients, and Sentinel device / email / traffic collection before `/api/auth` is live.
