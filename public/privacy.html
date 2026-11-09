@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>$CLAWD Percolator Privacy Policy · $CLAWD Percolator</title>
+<meta name="description" content="Privacy Policy for Musebook's Percolator terminals and related market-data services."/>
+<link rel="icon" href="/logo.svg"/>
+<link rel="stylesheet" href="/style.css"/>
+<style>
+  .legal{max-width:780px}
+  .legal h1{font-size:32px;margin:8px 0 6px}
+  .legal h2{margin:28px 0 8px;font-size:20px;color:var(--txt)}
+  .legal p,.legal li{color:var(--txt);line-height:1.65}
+  .legal ul{padding-left:1.2em}
+  .legal .meta{color:var(--dim);font-size:13px;margin-bottom:22px}
+  .legal .todo{border:1px dashed var(--cy);border-radius:12px;padding:10px 14px;margin:14px 0;color:var(--cy);background:#2ef2ff0d}
+</style>
+</head>
+<body>
+<nav><a class="brand" href="/"><img src="/logo.svg" width="34" alt=""> percolator</a><span class="sp"></span>
+<a href="/">Home</a><a href="/feed">Feed</a>
+<a href="/proofs">Proofs</a>
+<a href="/trade">Trade</a><a href="/stake">Stake</a>
+<a class="on" href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a>
+<a href="https://percolator.clawdchain.trade/">clawd chain app</a>
+<a href="https://explorer.clawdchain.trade/explorer">Explorer</a>
+<a href="https://github.com/Solizardking/clawd-percolator">GitHub</a></nav>
+<main class="wrap legal">
+  <div class="card">
+    <div class="stat"><div class="k">Musebook</div></div>
+    <h1 class="glow">Privacy Policy</h1>
+    <p class="meta">Effective date: November 9, 2026 (America/New_York). Provider: Musebook. Contact: <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</p>
+    
+    <p>This Privacy Policy describes how Musebook (“we,” “us”) handles information when you use <a href="https://percolator.tech">percolator.tech</a>, the related terminals at percolator.musebook.trade and percolator.clawdchain.trade, install.percolator.tech, and the public market-data interfaces those sites expose (together, the “Services”). It is based on what the current site and interfaces actually collect. It is not a complete legal opinion.</p>
+    <div class="todo"><strong>To be completed by the operator:</strong> legal entity name, registered address, and governing jurisdiction have not been provided and are not invented here. Until those are filled in, contact us at toly@mail.grokbot.com.</div>
+    <p class="todo">[Legal entity name — to be provided]<br>[Registered address — to be provided]<br>[Governing law / jurisdiction — to be provided]</p>
+
+    <h2>Categories of personal data collected</h2>
+    <p>We collect only the categories below, and only when you use the corresponding feature. We do not ask you to paste seed phrases or private keys into these pages, and the Services are not designed to take custody of your keys.</p>
+    <ul>
+      <li><strong>Network and request logs.</strong> When you load a page or call an API, standard request metadata may be processed by our hosting providers (for example Cloudflare on percolator.tech, Render on percolator.musebook.trade, and the origin that serves percolator.clawdchain.trade). This typically includes IP address, date and time, URL or path, user-agent, referrer, and response status. Cloudflare and similar providers may also use this data for security, caching, and abuse prevention.</li>
+      <li><strong>Public wallet addresses and on-chain identifiers.</strong> If you use trade, stake, or other wallet-connected flows, or you look up a position with an owner address, you may submit a public wallet address. Those addresses are public blockchain identifiers. The percolator.tech Worker also exposes <code>GET /api/me</code>, which verifies a Privy session token and returns a Privy user id and session id; it is written not to return secrets or private keys.</li>
+      <li><strong>Optional install-telemetry (install.percolator.tech).</strong> Install pings may record a source label (skill, repo, template, agent, or test), optional agent id, version, and cluster, plus an HMAC-SHA256 hash of the client IP (the raw IP is hashed with a server-side salt and is not stored in the install record). Test-source events are excluded from public counts.</li>
+      <li><strong>Public market and feed data.</strong> Endpoints such as <code>/api/markets</code>, <code>/api/feed</code>, and <code>/ops-snapshot.json</code> serve public market, feed, and operations data. The feed may call GitHub’s public API using a server-side token only to stay within rate limits; that token is not a user credential and is not shown to browsers.</li>
+    </ul>
+    <p>We do not currently operate a general user-account database on percolator.tech (there is no live <code>/api/auth</code> sign-up). If account sign-in is added later, this policy will be updated before that collection starts.</p>
+
+    <h2>Purposes</h2>
+    <ul>
+      <li>To operate, cache, and secure the websites and APIs, including health checks and abuse rate limits.</li>
+      <li>To show public market, feed, proof, and operations information.</li>
+      <li>To verify a wallet session you already created with Privy when you call <code>/api/me</code>, and to let you use wallet-connected testnet/devnet features on your own device.</li>
+      <li>To count optional skill or template installs without storing raw IP addresses.</li>
+      <li>To diagnose failures and keep the Services available.</li>
+    </ul>
+
+    <h2>Recipients</h2>
+    <ul>
+      <li><strong>Hosting and edge.</strong> Cloudflare (percolator.tech Worker and DNS), Render (percolator.musebook.trade and, historically, an install-tracker service), and the origin host for percolator.clawdchain.trade.</li>
+      <li><strong>Wallet session verification.</strong> Privy, when you use a Privy-issued token with <code>/api/me</code> or wallet-connected site features. Privy is a separate service with its own policy.</li>
+      <li><strong>Public software metadata.</strong> GitHub, for public repository and Actions data used to build the feed.</li>
+      <li><strong>Upstream market APIs.</strong> Public market data may be fetched from percolator.clawdchain.trade and shown on percolator.tech.</li>
+    </ul>
+    <p>We do not sell personal data. We do not use the Services to take custody of user funds or keys.</p>
+
+    <h2>Retention</h2>
+    <ul>
+      <li>Edge and origin request logs are retained according to each provider’s default logging windows unless a longer period is required for security or legal reasons.</li>
+      <li>Install records store an IP hash and event metadata. The current free-tier key-value store used for those events is ephemeral; we do not treat it as a permanent archive.</li>
+      <li>Public market, feed, and snapshot data are operational content, not a user profile store.</li>
+      <li>Privy session tokens are verified in request and are not stored by the percolator.tech Worker as a long-lived account database.</li>
+    </ul>
+
+    <h2>User controls</h2>
+    <ul>
+      <li>You can use the read-only pages and APIs without connecting a wallet.</li>
+      <li>You can disconnect your wallet in your wallet app or Privy session, and you can stop sending install pings by not running the optional install scripts.</li>
+      <li>Because wallet addresses are on a public chain, we cannot delete the chain itself. We can help review or delete install-telemetry records we control, where we can identify them.</li>
+      <li>To ask questions, object, or request access or deletion of data we hold, email <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>The Services are not directed at children, and we do not knowingly collect personal data from children.</p>
+
+    <h2>Changes</h2>
+    <p>We may update this policy as the Services change. The effective date above will be revised when we do. Material changes will be posted on this page.</p>
+
+    <h2>Contact</h2>
+    <p>Musebook, c/o the contact <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</p>
+
+  </div>
+</main>
+<footer>Musebook · $CLAWD Percolator · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/support">Support</a></footer>
+</body>
+</html>

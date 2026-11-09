@@ -96,3 +96,11 @@ npx wrangler deploy
 - **KV:** `percolator-tech-kv` (`red-dbou01u1egvs7382s710`) for install events
 - **Deploy source:** Render could not clone private `Solizardking/percolator-tech` (GitHub App not granted on that repo). Live deploys come from public `themusebook/x402-messaging` branch `percolator-tech-site`, directory `percolator-tech/`. This private repo stays the canonical source — grant Render access to it (or mirror) to switch the service repo URL.
 - **Free Postgres:** blocked (workspace already has `musebot-install-counter-db`, expires **2026-11-24 America/New_York**). App still supports `DATABASE_URL` + `perc_` tables if a DB becomes available.
+
+
+## Legal pages
+
+`/privacy`, `/terms`, and `/support` are served by the live Cloudflare Worker `percolator-tech` (apex and www). Source for those routes is `worker/src/` (including `legal-pages.js`). Static copies also live at `public/privacy.html`, `public/terms.html`, and `public/support.html`.
+
+Deploying legal routes updates the Worker script only and must not rotate or overwrite existing ASSETS, `GITHUB_TOKEN`, or Privy bindings.
+

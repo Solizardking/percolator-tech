@@ -1,0 +1,14 @@
+{
+  "name": "percolator-tech-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js --legal-comments=none"
+  },
+  "dependencies": {
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.11"
+  }
+}
