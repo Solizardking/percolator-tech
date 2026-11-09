@@ -6,3 +6,20 @@ main = "src/worker.js"
 compatibility_date = "2026-11-09"
 account_id = "7640372571bf2d69ed5d58a6a6d8929e"
 workers_dev = false
+
+# Auth is NOT enabled in production. Do not deploy this branch without a
+# separate owner approval. When that deploy is approved:
+# 1. Create a free-tier D1 database (suggested name: percolator-auth). This is
+#    not paid Postgres. Do not provision paid DB infra without approval.
+# 2. Uncomment the D1 binding and set database_id to the created database.
+# 3. Set Worker *secrets* (never [vars], never source): BETTER_AUTH_SECRET and
+#    BETTER_AUTH_API_KEY (rotated key only). Setting those on the production
+#    host is an env-var change and must be reported.
+# 4. Auth deploys may need compatibility_flags = ["nodejs_compat"]. Evaluate
+#    that flag against the existing Worker before enabling it.
+# 5. Run Better Auth programmatic migrations against AUTH_DB from a Worker.
+#
+# [[d1_databases]]
+# binding = "AUTH_DB"
+# database_name = "percolator-auth"
+# database_id = "REPLACE_AFTER_CREATE"

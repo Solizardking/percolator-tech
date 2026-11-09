@@ -104,3 +104,9 @@ npx wrangler deploy
 
 Deploying legal routes updates the Worker script only and must not rotate or overwrite existing ASSETS, `GITHUB_TOKEN`, or Privy bindings.
 
+
+
+## User auth (draft only)
+
+Better Auth is implemented on the `feat/better-auth` branch. See `worker/AUTH.md`. It is not deployed. Production `https://percolator.tech/api/auth` should stay 404 until an auth deploy is explicitly approved. Do not set `BETTER_AUTH_API_KEY` or `BETTER_AUTH_SECRET` on the production Worker as part of the legal-page deploy.
+
