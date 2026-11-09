@@ -30,7 +30,7 @@
   <div class="card">
     <div class="stat"><div class="k">Musebook</div></div>
     <h1 class="glow">Privacy Policy</h1>
-    <p class="meta">Effective date: November 9, 2026 (America/New_York). Provider: Musebook. Contact: <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</p>
+    <p class="meta">Effective date: November 9, 2026 (America/New_York). Last updated: November 9, 2026 (America/New_York), to describe account sign-in and Sentinel abuse protection. Provider: Musebook. Contact: <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</p>
     
     <p>This Privacy Policy describes how Musebook (“we,” “us”) handles information when you use <a href="https://percolator.tech">percolator.tech</a>, the related terminals at percolator.musebook.trade and percolator.clawdchain.trade, install.percolator.tech, and the public market-data interfaces those sites expose (together, the “Services”). It is based on what the current site and interfaces actually collect. It is not a complete legal opinion.</p>
     <div class="todo"><strong>To be completed by the operator:</strong> legal entity name, registered address, and governing jurisdiction have not been provided and are not invented here. Until those are filled in, contact us at toly@mail.grokbot.com.</div>
@@ -39,17 +39,19 @@
     <h2>Categories of personal data collected</h2>
     <p>We collect only the categories below, and only when you use the corresponding feature. We do not ask you to paste seed phrases or private keys into these pages, and the Services are not designed to take custody of your keys.</p>
     <ul>
-      <li><strong>Network and request logs.</strong> When you load a page or call an API, standard request metadata may be processed by our hosting providers (for example Cloudflare on percolator.tech, Render on percolator.musebook.trade, and the origin that serves percolator.clawdchain.trade). This typically includes IP address, date and time, URL or path, user-agent, referrer, and response status. Cloudflare and similar providers may also use this data for security, caching, and abuse prevention.</li>
+      <li><strong>Network and request logs.</strong> When you load a page or call an API, standard request metadata may be processed by our hosting providers (for example Cloudflare on percolator.tech, Railway for the auth service behind <code>/api/auth</code>, Render on percolator.musebook.trade, and the origin that serves percolator.clawdchain.trade). This typically includes IP address, date and time, URL or path, user-agent, referrer, and response status. Cloudflare and similar providers may also use this data for security, caching, and abuse prevention.</li>
       <li><strong>Public wallet addresses and on-chain identifiers.</strong> If you use trade, stake, or other wallet-connected flows, or you look up a position with an owner address, you may submit a public wallet address. Those addresses are public blockchain identifiers. The percolator.tech Worker also exposes <code>GET /api/me</code>, which verifies a Privy session token and returns a Privy user id and session id; it is written not to return secrets or private keys.</li>
       <li><strong>Optional install-telemetry (install.percolator.tech).</strong> Install pings may record a source label (skill, repo, template, agent, or test), optional agent id, version, and cluster, plus an HMAC-SHA256 hash of the client IP (the raw IP is hashed with a server-side salt and is not stored in the install record). Test-source events are excluded from public counts.</li>
       <li><strong>Public market and feed data.</strong> Endpoints such as <code>/api/markets</code>, <code>/api/feed</code>, and <code>/ops-snapshot.json</code> serve public market, feed, and operations data. The feed may call GitHub’s public API using a server-side token only to stay within rate limits; that token is not a user credential and is not shown to browsers.</li>
+      <li><strong>Account data.</strong> If you create an account through <code>/api/auth</code> on percolator.tech, we collect the email address you submit, a hashed password (we do not store your password in plaintext), and session identifiers kept in cookies so you can stay signed in. Those records are stored in a Neon Postgres database we operate for this service.</li>
+      <li><strong>Abuse-prevention signals (Better Auth Sentinel).</strong> When you sign up or sign in, our auth service and Better Auth’s Sentinel product may process your IP address, user-agent, request timing, the email you submit (for validation and normalization), a device or visitor identifier, and related traffic signals. Sentinel is configured in log and challenge mode, not automatic blocking: unusual traffic, including from VPNs or shared networks, may be challenged. Compromised-password checks use Have I Been Pwned with k-anonymity, so only a short prefix of a password hash leaves the auth server. Sentinel telemetry is sent to Better Auth infrastructure (including dash.better-auth.com and kv.better-auth.com).</li>
     </ul>
-    <p>We do not currently operate a general user-account database on percolator.tech (there is no live <code>/api/auth</code> sign-up). If account sign-in is added later, this policy will be updated before that collection starts.</p>
 
     <h2>Purposes</h2>
     <ul>
       <li>To operate, cache, and secure the websites and APIs, including health checks and abuse rate limits.</li>
       <li>To show public market, feed, proof, and operations information.</li>
+      <li>To create and maintain the account you request at <code>/api/auth</code>, keep you signed in, and help protect that account from abuse (including credential stuffing, bots, suspicious IPs, and known-compromised passwords).</li>
       <li>To verify a wallet session you already created with Privy when you call <code>/api/me</code>, and to let you use wallet-connected testnet/devnet features on your own device.</li>
       <li>To count optional skill or template installs without storing raw IP addresses.</li>
       <li>To diagnose failures and keep the Services available.</li>
@@ -57,7 +59,9 @@
 
     <h2>Recipients</h2>
     <ul>
-      <li><strong>Hosting and edge.</strong> Cloudflare (percolator.tech Worker and DNS), Render (percolator.musebook.trade and, historically, an install-tracker service), and the origin host for percolator.clawdchain.trade.</li>
+      <li><strong>Hosting and edge.</strong> Cloudflare (percolator.tech Worker and DNS), Railway (the Better Auth service that <code>/api/auth</code> is proxied to), Render (percolator.musebook.trade and, historically, an install-tracker service), and the origin host for percolator.clawdchain.trade.</li>
+      <li><strong>Account database.</strong> Neon, which hosts the Postgres database used for account, session, and related auth records.</li>
+      <li><strong>Abuse protection.</strong> Better Auth (Sentinel / Better Auth Infrastructure), which evaluates sign-in and sign-up traffic as described above. Better Auth is a separate service with its own policy.</li>
       <li><strong>Wallet session verification.</strong> Privy, when you use a Privy-issued token with <code>/api/me</code> or wallet-connected site features. Privy is a separate service with its own policy.</li>
       <li><strong>Public software metadata.</strong> GitHub, for public repository and Actions data used to build the feed.</li>
       <li><strong>Upstream market APIs.</strong> Public market data may be fetched from percolator.clawdchain.trade and shown on percolator.tech.</li>
@@ -70,14 +74,16 @@
       <li>Install records store an IP hash and event metadata. The current free-tier key-value store used for those events is ephemeral; we do not treat it as a permanent archive.</li>
       <li>Public market, feed, and snapshot data are operational content, not a user profile store.</li>
       <li>Privy session tokens are verified in request and are not stored by the percolator.tech Worker as a long-lived account database.</li>
+      <li>Account emails, password hashes, and auth sessions are kept until you ask us to delete the account, or until the session expires, unless a longer period is required for security or legal reasons.</li>
+      <li>Sentinel and related abuse-prevention events are retained according to Better Auth’s infrastructure retention.</li>
     </ul>
 
     <h2>User controls</h2>
     <ul>
-      <li>You can use the read-only pages and APIs without connecting a wallet.</li>
+      <li>You can use the read-only pages and APIs without creating an account or connecting a wallet.</li>
       <li>You can disconnect your wallet in your wallet app or Privy session, and you can stop sending install pings by not running the optional install scripts.</li>
       <li>Because wallet addresses are on a public chain, we cannot delete the chain itself. We can help review or delete install-telemetry records we control, where we can identify them.</li>
-      <li>To ask questions, object, or request access or deletion of data we hold, email <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</li>
+      <li>To ask questions, object, or request access or deletion of an account or other data we hold, email <a href="mailto:toly@mail.grokbot.com">toly@mail.grokbot.com</a>.</li>
     </ul>
 
     <h2>Children</h2>

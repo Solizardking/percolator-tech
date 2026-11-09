@@ -106,7 +106,11 @@ Deploying legal routes updates the Worker script only and must not rotate or ove
 
 
 
-## User auth (draft only)
+## User auth
 
-Better Auth is implemented on the `feat/better-auth` branch. See `worker/AUTH.md`. It is not deployed. Production `https://percolator.tech/api/auth` should stay 404 until an auth deploy is explicitly approved. Do not set `BETTER_AUTH_API_KEY` or `BETTER_AUTH_SECRET` on the production Worker as part of the legal-page deploy.
+Better Auth is self-hosted on Railway (project `percolator-tech`, service `percolator-auth`) with Neon Postgres. The Cloudflare Worker proxies `https://percolator.tech/api/auth` to that service. See `worker/AUTH.md` and `auth-server/`.
+
+Do not put `BETTER_AUTH_API_KEY` or `BETTER_AUTH_SECRET` on the Worker; those stay on Railway. The Worker only needs `AUTH_UPSTREAM` (the Railway origin). Deploys must keep existing ASSETS and Privy/GitHub bindings.
+
+`python3 scripts/embed-legal-pages.py` rebuilds `worker/src/legal-pages.js` from `public/privacy.html`, `public/terms.html`, and `public/support.html`.
 
