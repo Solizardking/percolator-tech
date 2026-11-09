@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: percolator-tech
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: MARKETS_URL
+        value: https://percolator.clawdchain.trade/api/markets
+      - key: IP_HASH_SALT
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          name: percolator-tech-kv
+          type: keyvalue
+          property: connectionString
+
+# Key Value instance already created as percolator-tech-kv (free).
+# Free Postgres could not be created (workspace already has one free DB:
+# musebot-install-counter-db, expires 2026-11-24). Redis/KV used instead.
+# If a dedicated Postgres becomes available later, set DATABASE_URL and
+# the app will prefer it when REDIS_URL is unset.

@@ -1,10 +1,16 @@
 import { createServer, createMemoryStore } from './app.js';
 
-const url = process.env.DATABASE_URL;
-const store = url
-  ? await (await import('./store-pg.js')).createPgStore(url)
-  : createMemoryStore();
-if (!url) console.warn('DATABASE_URL not set: using in-memory store');
+let store;
+if (process.env.REDIS_URL) {
+  store = await (await import('./store-redis.js')).createRedisStore(process.env.REDIS_URL);
+  console.log('store: redis');
+} else if (process.env.DATABASE_URL) {
+  store = await (await import('./store-pg.js')).createPgStore(process.env.DATABASE_URL);
+  console.log('store: postgres');
+} else {
+  store = createMemoryStore();
+  console.warn('DATABASE_URL/REDIS_URL not set: using in-memory store');
+}
 
 const port = Number(process.env.PORT || 10000);
 createServer(store, {

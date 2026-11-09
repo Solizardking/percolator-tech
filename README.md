@@ -14,16 +14,17 @@ Educational / unaudited. No promised returns. Brand is **$CLAWD** only.
 
 ## Deploy
 
-Render free web service `percolator-tech` + free Postgres `percolator-tech-db`.
+Render free web service `percolator-tech` + free Key Value `percolator-tech-kv`.
 
 Env vars (set in Render only — never commit):
 
-- `DATABASE_URL` — Render Postgres internal URL
-- `IP_HASH_SALT` — long random secret for HMAC of client IPs
+- `REDIS_URL` — from `percolator-tech-kv` connection string (Blueprint `fromService`)
+- `DATABASE_URL` — optional; used if `REDIS_URL` is unset (Postgres path with `perc_` tables only)
+- `IP_HASH_SALT` — long random secret for HMAC of client IPs (`generateValue` in Blueprint)
 - `MARKETS_URL` — default `https://percolator.clawdchain.trade/api/markets`
 - `PORT` — set by Render
 
-Free Postgres on Render expires ~30 days after creation; renew or migrate before then.
+Note: this workspace already has one free Postgres (`musebot-install-counter-db`, expires **2026-11-24 America/New_York**). Render allows only one free DB, so installs persist in free Key Value instead. KV free tier is ephemeral (persistenceMode off) — renew/migrate before relying on long history.
 
 ## Wire the install ping (do not skip)
 
