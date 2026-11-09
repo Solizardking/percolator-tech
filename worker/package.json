@@ -6,6 +6,8 @@
     "build": "esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js --legal-comments=none"
   },
   "dependencies": {
+    "@better-auth/infra": "^0.4.28",
+    "better-auth": "^1.7.18",
     "jose": "^6.1.0"
   },
   "devDependencies": {

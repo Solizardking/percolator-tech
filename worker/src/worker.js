@@ -3,6 +3,7 @@ import { getFeed } from './feed-data.js';
 import { renderFeedHtml } from './feed-page.js';
 
 import { legalResponse } from './legal-pages.js';
+import { isAuthPath, handleAuth } from './auth.js';
 
 const NAV = `<nav><a class="brand" href="/"><img src="/logo.svg" width="34" alt=""> percolator</a><span class="sp"></span>
 <a href="/">Home</a><a class="on" href="/feed">Feed</a>
@@ -93,6 +94,8 @@ export default {
       const page = legalResponse(legalSlug);
       if (page) return page;
     }
+
+    if (isAuthPath(url.pathname)) return handleAuth(request, env);
 
     if (url.pathname === '/api/me') return handleMe(request, env);
 
