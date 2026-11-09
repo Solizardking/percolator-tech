@@ -1,0 +1,13 @@
+name = "percolator-install"
+main = "src/worker.js"
+compatibility_date = "2026-11-09"
+workers_dev = true
+account_id = "7640372571bf2d69ed5d58a6a6d8929e"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "percolator-installs"
+database_id = "266c3564-d418-424d-85be-c3dcec5416bf"
+
+# Custom domain install.percolator.tech is attached via Cloudflare API after deploy.
+# Do NOT add apex/www routes here — those belong to the percolator-tech worker.
