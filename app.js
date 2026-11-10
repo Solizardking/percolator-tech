@@ -3,6 +3,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { CLAWD_MARKET } from './market-registry.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCES = new Set(['skill', 'repo', 'template', 'agent', 'test']);
@@ -152,6 +153,7 @@ curl -fsS -m 5 -X POST "$BASE/api/install" \\
 export function createServer(store, { ipSalt, marketsUrl } = {}) {
   const homeHtml = loadPage('index.html');
   const installsHtml = loadPage('installs.html');
+  const marketHtml = loadPage('market.html');
 
   return http.createServer(async (req, res) => {
     try {
@@ -183,6 +185,10 @@ export function createServer(store, { ipSalt, marketsUrl } = {}) {
         } catch (e) {
           return sendJson(res, 502, { error: 'markets upstream unavailable', detail: String(e.message || e) });
         }
+      }
+
+      if (req.method === 'GET' && path === '/api/clawd-markets') {
+        return sendJson(res, 200, CLAWD_MARKET);
       }
 
       if (req.method === 'POST' && path === '/api/install') {
@@ -224,6 +230,9 @@ export function createServer(store, { ipSalt, marketsUrl } = {}) {
       }
       if (req.method === 'GET' && path === '/installs') {
         return sendHtml(res, 200, installsHtml);
+      }
+      if (req.method === 'GET' && path === '/market') {
+        return sendHtml(res, 200, marketHtml);
       }
 
       sendJson(res, 404, { error: 'not found' });
