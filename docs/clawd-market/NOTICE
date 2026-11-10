@@ -1,0 +1,17 @@
+CLAWD Market (clawd-percolator fork)
+Copyright 2026 8 Bit (Solizardking) - modifications
+
+This product includes software developed by Anatoly Yakovenko and contributors:
+  - percolator-prog  https://github.com/aeyakovenko/percolator-prog  (base commit 02a4aef2)
+  - percolator       https://github.com/aeyakovenko/percolator       (base commit e22e30cf)
+  - percolator-match https://github.com/aeyakovenko/percolator-match (commit 185ad0d, test fixture)
+All licensed under the Apache License, Version 2.0 (see LICENSE, engine/LICENSE, matcher/LICENSE).
+
+Modifications (summary; see docs/HARDENING.md and git history for detail):
+  - two-step admin handoff, security.txt, build-time program id
+  - SPL Token + Token-2022 collateral with a mint-extension allow-list
+  - backports of upstream fixes f40029b5 and 4673fef6
+  - trustless pool oracle for pump.fun / PumpSwap / Raydium LaunchLab (Stonk.fun) markets
+  - CLAWD branding, client CLI, scripts and docs
+"Percolator" is used only to describe the origin of the code; this fork is not endorsed by the
+upstream authors.

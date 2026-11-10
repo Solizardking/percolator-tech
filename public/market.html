@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLAWD Market — percolator</title>
+<link rel="icon" href="/logo.svg">
+<style>
+  body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; background: #0b0e13; color: #e6e9ee; }
+  nav { display: flex; gap: 14px; align-items: center; padding: 12px 18px; border-bottom: 1px solid #1d232e; flex-wrap: wrap; }
+  nav a { color: #9fb2c8; text-decoration: none; } nav a.on { color: #fff; }
+  nav .brand { color: #fff; font-weight: 700; display: flex; gap: 8px; align-items: center; }
+  nav .sp { flex: 1; }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 18px 60px; }
+  h1 { font-size: 28px; margin: 8px 0 4px; } h2 { font-size: 19px; margin: 28px 0 8px; }
+  .warn { background: #2a1608; border: 1px solid #7a4a12; color: #f2c078; padding: 10px 14px; border-radius: 8px; }
+  .card { background: #12161e; border: 1px solid #1d232e; border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
+  code, .mono { font-family: ui-monospace, monospace; font-size: 13px; word-break: break-all; }
+  a { color: #6cb2f5; } table { border-collapse: collapse; } td { padding: 3px 10px 3px 0; vertical-align: top; }
+  .muted { color: #8b98a9; } pre { background: #0e1117; border: 1px solid #1d232e; border-radius: 8px; padding: 10px; overflow: auto; }
+</style>
+</head>
+<body>
+<nav><a class="brand" href="/"><img src="/logo.svg" width="34" alt=""> percolator</a><span class="sp"></span>
+<a href="/">Home</a><a href="/feed">Feed</a><a href="/proofs">Proofs</a><a href="/trade">Trade</a><a href="/stake">Stake</a>
+<a class="on" href="/market">Market</a>
+<a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a></nav>
+<main>
+<h1>CLAWD Market</h1>
+<p class="muted">CLAWD perps on a hardened Percolator fork — Token-2022 CLAWD collateral, trustless pool oracles
+(pump.fun curves, PumpSwap pools, Raydium LaunchLab / Stonk.fun). Source:
+<a href="https://github.com/Solizardking/clawd-market">Solizardking/clawd-market</a> (Apache-2.0).</p>
+<p class="warn"><strong>Unaudited. Devnet only.</strong> Nothing on this page is deployed to mainnet, and no real
+funds should be deposited. The mainnet design is gated on the checklist in the docs below.</p>
+
+<h2>Devnet deployment (verified 2026-11-09)</h2>
+<div class="card"><table>
+<tr><td class="muted">Program</td><td class="mono"><a href="https://solscan.io/account/Anw121Fk3gKvUHXk938cY2xVb9Eq46WX3k15WESS49PA?cluster=devnet">Anw121Fk3gKvUHXk938cY2xVb9Eq46WX3k15WESS49PA</a></td></tr>
+<tr><td class="muted">Matcher</td><td class="mono">4urzQCupvnMWvGTovGZsYSWNaGFA9WjsztBYEQJeNnAS</td></tr>
+<tr><td class="muted">Collateral</td><td class="mono">CLAWD-dev <a href="https://solscan.io/account/CTjhnHRb85g9m3LwZpfPKkoteKeFZcuX7VHfKeCVFxmW?cluster=devnet">CTjhnHRb85g9m3LwZpfPKkoteKeFZcuX7VHfKeCVFxmW</a> (Token-2022, 6 dp)</td></tr>
+<tr><td class="muted">Registry API</td><td class="mono"><a href="/api/clawd-markets">/api/clawd-markets</a></td></tr>
+</table></div>
+
+<h2>Markets</h2>
+<div class="card"><strong>CLAWD-dev admin-oracle market</strong> (demo market from the 2026-11-09 run)<br>
+<span class="muted">Slab</span> <span class="mono"><a href="https://solscan.io/account/7KgTRxE14Rii5kR7YpPuCfKKQSceXoZNorhMtunRJDy3?cluster=devnet">7KgTRxE14Rii5kR7YpPuCfKKQSceXoZNorhMtunRJDy3</a></span><br>
+<span class="muted">Vault</span> <span class="mono">9z7HcpxhgfZbGwgrLD72FtC6fsqSZwtvVYphWFCEA1ye</span></div>
+<div class="card"><strong>Permissionless PumpSwap pool-oracle market</strong> (kind 3, invert 1)<br>
+<span class="muted">Slab</span> <span class="mono"><a href="https://solscan.io/account/6GvLYn4qepjipw8E4cBHN2sXEQgXfKGDH9FLYqC9zzpU?cluster=devnet">6GvLYn4qepjipw8E4cBHN2sXEQgXfKGDH9FLYqC9zzpU</a></span><br>
+<span class="muted">Pool</span> <span class="mono">DikcdxFFTZm9gRvnfSXY39hAp4iHcCNkp1bhsAZELHAQ</span><br>
+<span class="muted">Vault</span> <span class="mono">HuLkC41mcZ1ww8SmEpWLDd1RXq4JcgnRzggcm1fg3J9R</span></div>
+<p class="muted">Full run record with every transaction: docs/clawd-market/docs/runs/DEVNET-2026-11-09.md in
+<a href="https://github.com/Solizardking/percolator-tech">percolator-tech</a>.</p>
+
+<h2>Trade (devnet app)</h2>
+<p>The trading UI is the React + Vite app in <span class="mono">clawd-market/app</span> — it builds every transaction
+in the browser and the user's wallet signs; the server holds no keys. It runs locally today
+(<span class="mono">npm install &amp;&amp; npm run build &amp;&amp; npm start</span> in <span class="mono">app/</span>);
+hosting it on percolator.tech is the merge-step decision in <span class="mono">docs/INTEGRATION.md</span>.
+The Clawd Chain testnet app stays at <a href="/trade">/trade</a>.</p>
+
+<h2>Agents: live feed + MCP</h2>
+<div class="card">
+<p><span class="muted">WebSocket</span> <span class="mono">wss://percolator.tech/ws</span> ·
+<span class="muted">MCP</span> <span class="mono">https://percolator.tech/mcp</span>
+(<a href="https://github.com/Solizardking/percolator-ws">percolator-ws</a>)</p>
+<p class="muted">Read tools (free; $CLAWD holders free after SIWS, otherwise x402 USDC tiers). Write tools are off.</p>
+<pre id="tools">loading…</pre>
+</div>
+
+<h2>Account</h2>
+<p>Sign-in is Better Auth at <span class="mono">/api/auth</span>, proxied by this site to the Railway auth service.
+The browser client is <span class="mono">worker/src/auth-client.js</span>; see <span class="mono">worker/AUTH.md</span>.</p>
+
+<h2>Docs</h2>
+<ul>
+<li><a href="https://github.com/Solizardking/clawd-market/blob/main/docs/HARDENING.md">Hardening log</a> — fork diff vs upstream, backports, test results</li>
+<li><a href="https://github.com/Solizardking/clawd-market/blob/main/docs/USER-MARKETS.md">User markets</a> — permissionless markets, pool-oracle guards, Web/API spec</li>
+<li><a href="https://github.com/Solizardking/clawd-market/blob/main/docs/DEVNET.md">Devnet runs</a> and the
+<a href="https://github.com/Solizardking/clawd-market/blob/main/docs/MAINNET-CHECKLIST.md">mainnet checklist</a> (nothing ships to mainnet until it is done)</li>
+<li><a href="https://github.com/Solizardking/percolator">percolator SDK</a> — TypeScript slab decoders + oracle math used to read these markets</li>
+</ul>
+<p class="muted">Credits: Percolator by Anatoly Yakovenko and contributors, Apache-2.0 — see the NOTICE vendored at
+docs/clawd-market/NOTICE. "Percolator" names the origin of the code; the fork is not endorsed by the upstream authors.</p>
+</main>
+<script>
+fetch('/api/clawd-markets').then(r => r.json()).then(d => {
+  document.getElementById('tools').textContent = (d.services?.ws?.reads || []).join('\n') || 'unavailable';
+}).catch(() => { document.getElementById('tools').textContent = 'unavailable'; });
+</script>
+</body>
+</html>
