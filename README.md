@@ -9,8 +9,18 @@ Home page + install tracker for **$CLAWD Percolator**.
 - `POST /api/install` — `{ "source": "skill"|"repo"|"template"|"agent"|"test", "agent_id?", "version?", "cluster?" }`
 - `GET /i/<source>.sh` — one-liner ping script for installers
 - `GET /api/markets` — proxy to clawd markets API
+- `GET /market` — CLAWD Market page (devnet registry, docs, agent endpoints)
+- `GET /api/clawd-markets` — CLAWD Market registry JSON (clawd-market program, devnet markets, ws/MCP + auth services)
 
 Educational / unaudited. No promised returns. Brand is **$CLAWD** only.
+
+## CLAWD Market integration
+
+The Percolator stack (clawd-market program + app, the `percolator` TypeScript SDK,
+`percolator-ws` WSS/MCP, and the Railway Better Auth service) is integrated per
+[`docs/INTEGRATION.md`](docs/INTEGRATION.md). clawd-market's docs and Apache-2.0
+license/attribution are vendored under [`docs/clawd-market/`](docs/clawd-market/).
+Devnet / testnet only — nothing here is mainnet.
 
 ## Deploy
 
@@ -113,4 +123,5 @@ Better Auth is self-hosted on Railway (project `percolator-tech`, service `perco
 Do not put `BETTER_AUTH_API_KEY` or `BETTER_AUTH_SECRET` on the Worker; those stay on Railway. The Worker only needs `AUTH_UPSTREAM` (the Railway origin). Deploys must keep existing ASSETS and Privy/GitHub bindings.
 
 `python3 scripts/embed-legal-pages.py` rebuilds `worker/src/legal-pages.js` from `public/privacy.html`, `public/terms.html`, and `public/support.html`.
+
 
