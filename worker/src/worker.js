@@ -4,11 +4,12 @@ import { renderFeedHtml } from './feed-page.js';
 
 import { legalResponse } from './legal-pages.js';
 import { isAuthPath, handleAuth } from './auth.js';
+import { clawdMarketsResponse } from './clawd-markets.js';
 
 const NAV = `<nav><a class="brand" href="/"><img src="/logo.svg" width="34" alt=""> percolator</a><span class="sp"></span>
 <a href="/">Home</a><a class="on" href="/feed">Feed</a>
 <a href="/proofs">Proofs</a>
-<a href="/trade">Trade</a><a href="/stake">Stake</a>
+<a href="/trade">Trade</a><a href="/stake">Stake</a><a href="/market">Market</a>
 <a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/support">Support</a>
 <a href="https://percolator.clawdchain.trade/">clawd chain app</a>
 <a href="https://explorer.clawdchain.trade/explorer">Explorer</a>
@@ -99,6 +100,10 @@ export default {
 
     if (url.pathname === '/api/me') return handleMe(request, env);
 
+    if (url.pathname === '/api/clawd-markets') {
+      return clawdMarketsResponse();
+    }
+
     if (url.pathname === '/api/markets') {
       try {
         const r = await fetch(MARKETS_URL, { signal: AbortSignal.timeout(8_000) });
@@ -153,6 +158,8 @@ export default {
         assetReq = new Request(new URL('/trade.html', url.origin), request);
       } else if (url.pathname === '/stake' || url.pathname === '/stake/') {
         assetReq = new Request(new URL('/stake.html', url.origin), request);
+      } else if (url.pathname === '/market' || url.pathname === '/market/') {
+        assetReq = new Request(new URL('/market.html', url.origin), request);
       } else if (url.pathname === '/proofs' || url.pathname === '/proofs/') {
         assetReq = new Request(new URL('/proofs.html', url.origin), request);
       }
