@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dark Percolator — How a 1.75 MB slab prices the STOXX 50 in SOL, around the clock</title>
+<meta name="description" content="An interactive explainer: the Percolator Bounty4 STOXX 50 / SOL 20x slab, its three-leg Pyth oracle, EWMA after-hours mark and hybrid fee — and Dark Percolator, a design proposal to run the same engine inside a MagicBlock Private Ephemeral Rollup.">
+<style>
+:root{
+  --bg:#07070d; --bg2:#0c0c16; --card:#10101c; --card2:#14142400;
+  --line:#23233a; --line2:#2e2e4d;
+  --txt:#e8e8f2; --mut:#9a9ab5; --dim:#6d6d8c;
+  --pur:#9945FF; --grn:#14F195; --red:#ff5d73; --amb:#ffb454; --blu:#5db4ff;
+  --mono:ui-monospace,'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,rgba(153,69,255,.14),transparent 60%),radial-gradient(900px 500px at 0% 0%,rgba(20,241,149,.07),transparent 55%),var(--bg);color:var(--txt);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:var(--grn);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px 90px}
+.grad{background:linear-gradient(90deg,var(--pur),var(--grn));-webkit-background-clip:text;background-clip:text;color:transparent}
+header.hero{padding:56px 0 8px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--grn)}
+h1{font-size:clamp(38px,6vw,64px);line-height:1.04;margin:12px 0 14px;font-weight:800;letter-spacing:-.02em}
+.lede{font-size:clamp(16px,2.2vw,20px);color:var(--mut);max-width:820px;margin:0 0 22px}
+.status{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.status span{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);border-radius:999px;padding:5px 12px;color:var(--txt);background:rgba(153,69,255,.08)}
+.status span.warn{border-color:rgba(255,180,84,.5);color:var(--amb);background:rgba(255,180,84,.06)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:26px 0 8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.stat .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-family:var(--mono)}
+.stat .v{font-size:17px;font-weight:700;margin-top:3px;font-family:var(--mono);word-break:break-all}
+.stat .v small{color:var(--mut);font-weight:400;font-size:12px}
+nav.chips{position:sticky;top:0;z-index:20;background:rgba(7,7,13,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 0;margin:26px -20px 0}
+nav.chips .in{max-width:1060px;margin:0 auto;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap}
+nav.chips a{font-family:var(--mono);font-size:12px;color:var(--mut);border:1px solid var(--line);padding:5px 11px;border-radius:999px}
+nav.chips a:hover{color:var(--txt);border-color:var(--pur);text-decoration:none}
+.part{margin:64px 0 0;font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--pur);text-transform:uppercase}
+section{margin:34px 0 0}
+.sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.sec-num{font-family:var(--mono);color:var(--grn);font-size:14px}
+h2{font-size:clamp(24px,3.4vw,34px);margin:0;font-weight:750;letter-spacing:-.01em}
+.sec-sub{color:var(--mut);font-size:16px;margin:4px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:18px}
+.card h3{margin:0 0 10px;font-size:16px}
+.formula{font-family:var(--mono);background:#0a0a14;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14px;overflow-x:auto;white-space:nowrap;color:#cfcfff}
+.formula .c{color:var(--dim)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+label.f{display:block;font-size:12px;font-family:var(--mono);color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px}
+input[type=number],input[type=text]{width:100%;background:#0a0a14;border:1px solid var(--line2);border-radius:9px;color:var(--txt);font-family:var(--mono);font-size:16px;padding:9px 11px}
+input:focus{outline:2px solid rgba(153,69,255,.55);border-color:var(--pur)}
+input[type=range]{width:100%;accent-color:var(--pur)}
+.out{font-family:var(--mono)}
+.big{font-size:26px;font-weight:700}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid}
+.badge.fresh{color:var(--grn);border-color:rgba(20,241,149,.5);background:rgba(20,241,149,.07)}
+.badge.stale{color:var(--red);border-color:rgba(255,93,115,.5);background:rgba(255,93,115,.07)}
+.badge.mode{color:var(--amb);border-color:rgba(255,180,84,.5);background:rgba(255,180,84,.06)}
+.badge.live{color:var(--grn);border-color:rgba(20,241,149,.5);background:rgba(20,241,149,.07)}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+td.mono,.mono{font-family:var(--mono)}
+.sev{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid}
+.sev.high{color:var(--red);border-color:rgba(255,93,115,.55)}
+.sev.med{color:var(--amb);border-color:rgba(255,180,84,.55)}
+.sev.low{color:var(--blu);border-color:rgba(93,180,255,.55)}
+.btn{font-family:var(--mono);font-size:13px;background:linear-gradient(90deg,rgba(153,69,255,.25),rgba(20,241,149,.18));color:var(--txt);border:1px solid var(--line2);border-radius:9px;padding:8px 16px;cursor:pointer}
+.btn:hover{border-color:var(--pur)}
+.btn.ghost{background:#0a0a14}
+.btn:disabled{opacity:.4;cursor:default}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+pre{background:#0a0a14;border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#c9c9e8}
+pre .cm{color:var(--dim)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;font-size:14px}
+.kv dt{color:var(--dim);font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;padding-top:2px}
+.kv dd{margin:0;font-family:var(--mono);word-break:break-all}
+.note{font-size:13px;color:var(--mut)}
+.small{font-size:12.5px;color:var(--dim)}
+.hidden{color:var(--dim);letter-spacing:.15em}
+.yes{color:var(--grn)} .no{color:var(--dim)} .partial{color:var(--amb)}
+/* feed map */
+.feedmap{font-family:var(--mono);font-size:11px}
+.fm-row{display:grid;grid-template-columns:118px 1fr;gap:10px;align-items:center;margin:8px 0}
+.fm-track{position:relative;height:22px;background:#0a0a14;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.fm-open{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(153,69,255,.55),rgba(20,241,149,.45))}
+.fm-now{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff;box-shadow:0 0 6px #fff}
+.fm-hours{display:grid;grid-template-columns:118px 1fr;gap:10px;color:var(--dim)}
+.fm-hours .ticks{position:relative;height:14px}
+.fm-hours .ticks span{position:absolute;transform:translateX(-50%)}
+/* slab map */
+.slabmap{display:flex;height:64px;border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:6px}
+.slabmap button{border:0;border-right:1px solid var(--line);color:var(--txt);font-family:var(--mono);font-size:11px;cursor:pointer;padding:6px 4px}
+.slabmap button:last-child{border-right:0}
+.slabmap .r-head{background:rgba(93,180,255,.25);flex:0 0 9%}
+.slabmap .r-conf{background:rgba(255,180,84,.25);flex:0 0 15%}
+.slabmap .r-risk{background:linear-gradient(90deg,rgba(153,69,255,.4),rgba(20,241,149,.3));flex:1}
+.slabmap button.sel{outline:2px solid #fff;outline-offset:-2px}
+/* stepper */
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.steps .st{font-family:var(--mono);font-size:12px;border:1px solid var(--line2);border-radius:999px;padding:5px 12px;color:var(--mut)}
+.steps .st.on{color:#0a0a12;background:linear-gradient(90deg,var(--pur),var(--grn));border-color:transparent;font-weight:700}
+.stepbody{min-height:86px}
+/* arch diagram */
+.arch{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.arch{grid-template-columns:1fr}}
+.arch .col{border:1px dashed var(--line2);border-radius:14px;padding:16px}
+.arch .col.tee{border-color:rgba(20,241,149,.45);background:rgba(20,241,149,.03)}
+.arch .box{background:#0a0a14;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:13.5px}
+.arch .box b{display:block;font-size:13px}
+.arch .box span{color:var(--mut);font-size:12.5px}
+.flowline{font-family:var(--mono);font-size:12px;color:var(--grn);text-align:center;margin:10px 0}
+/* bars */
+.bar-wrap{margin:10px 0}
+.bar-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.bar{height:16px;background:#0a0a14;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%}
+footer{margin-top:80px;border-top:1px solid var(--line);padding-top:22px;color:var(--mut);font-size:13.5px}
+.toggle{display:inline-flex;border:1px solid var(--line2);border-radius:999px;overflow:hidden}
+.toggle button{background:#0a0a14;color:var(--mut);border:0;font-family:var(--mono);font-size:12px;padding:6px 14px;cursor:pointer}
+.toggle button.on{background:linear-gradient(90deg,rgba(153,69,255,.5),rgba(20,241,149,.4));color:#fff}
+.viewerrow{display:flex;gap:8px;flex-wrap:wrap}
+.viewerrow .btn.on{border-color:var(--grn);color:var(--grn)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">Percolator · Bounty4 · Dark Percolator</div>
+  <h1>Dark <span class="grad">Percolator</span></h1>
+  <p class="lede">How a 1.75&nbsp;MB slab prices the STOXX&nbsp;50 in SOL around the clock, why its after-hours fee makes mark manipulation a losing trade, and how the same engine could run inside a MagicBlock Private Ephemeral Rollup so positions, intents and liquidation levels stop being public.</p>
+  <div class="status">
+    <span class="warn">Status: design, devnet-first</span>
+    <span class="warn">Nothing deployed or funded</span>
+    <span class="warn">Our composition, not a MagicBlock product</span>
+    <span>Calculator values are examples, not live market data</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Program</div><div class="v" title="4ToDRrQW5j3oeQm8uTAwV9Rp6NhYfH5E5hMKcXkqfwfz">4ToDRr…fwfz</div></div>
+    <div class="stat"><div class="k">Slab</div><div class="v" title="GSAT5fTCUgB9sMMTBsVzhvALbkSv6p9CifWmShHf92hj">GSAT5f…92hj</div></div>
+    <div class="stat"><div class="k">Leverage</div><div class="v">20×</div></div>
+    <div class="stat"><div class="k">Collateral</div><div class="v">wSOL</div></div>
+    <div class="stat"><div class="k">Oracle</div><div class="v">Pyth <small>3-leg</small></div></div>
+    <div class="stat"><div class="k">Dark layer</div><div class="v">MagicBlock PER <small>· TDX</small></div></div>
+  </div>
+</header>
+
+<nav class="chips"><div class="in">
+  <a href="#oracle">Oracle</a><a href="#clock">Clock problem</a><a href="#ewma">EWMA mark</a><a href="#fee">Hybrid fee</a><a href="#slab">Slab</a><a href="#crank">Crank</a><a href="#params">Parameters</a><a href="#findings">Findings</a><a href="#dark">Dark Percolator</a><a href="#pool">Dark pool</a><a href="#plan">Build plan</a>
+</div></nav>
+
+<div class="part">Part I · The Engine</div>
+<p class="note" style="margin-top:10px">Percolator is an on-chain perpetuals DEX built around a single slab account. Config, risk engine and up to 4,096 trader records sit in one 1,755,520-byte layout, so every trade, liquidation and funding accrual is a mutation of that one account.</p>
+<p class="note">Bounty4 (<span class="mono">bounty_stoxx50_sol_20x_hybrid</span>) is a 20× perp on the STOXX 50 priced in SOL. Its insurance fund was seeded with 5 SOL, and the bounty is won by making that balance go down through public instructions.</p>
+
+<!-- 01 ORACLE -->
+<section id="oracle">
+  <div class="sec-head"><span class="sec-num">01 · Pricing</span><h2>The three-leg oracle</h2></div>
+  <p class="sec-sub">Solana runs 24/7; Euronext does not. Pricing STOXX 50 in SOL takes three Pyth PriceUpdateV2 feeds with different schedules, combined in e6 integer math, then inverted.</p>
+  <div class="card">
+    <div class="formula">raw&nbsp; = Leg1 × Leg2 / Leg3&nbsp;&nbsp;<span class="c">// STOXX50/EUR × EUR/USD ÷ SOL/USD</span><br>mark = 10¹² / raw_e6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c">// invert = 1 in config</span></div>
+    <div class="grid3" style="margin-top:18px">
+      <div><label class="f" for="l1">Leg 1 · STOXX50/EUR (€)</label><input type="number" id="l1" value="5214" step="any"></div>
+      <div><label class="f" for="l2">Leg 2 · EUR/USD</label><input type="number" id="l2" value="1.087" step="any"></div>
+      <div><label class="f" for="l3">Leg 3 · SOL/USD ($)</label><input type="number" id="l3" value="148.00" step="any"></div>
+      <div><label class="f" for="a1">Leg 1 age (s)</label><input type="number" id="a1" value="7840" step="1"></div>
+      <div><label class="f" for="a2">Leg 2 age (s)</label><input type="number" id="a2" value="12" step="1"></div>
+      <div><label class="f" for="a3">Leg 3 age (s)</label><input type="number" id="a3" value="8" step="1"></div>
+    </div>
+    <div class="grid2" style="margin-top:18px">
+      <div><div class="small">raw_e6 (SOL per STOXX50)</div><div class="out big" id="rawOut">—</div><div class="note" id="rawApprox"></div></div>
+      <div><div class="small">mark_e6 (inverted)</div><div class="out big" id="markOut">—</div><div class="note" id="markApprox"></div></div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="small">Leg freshness · max 600 s:</span>
+      <span id="b1" class="badge">L1</span><span id="b2" class="badge">L2</span><span id="b3" class="badge">L3</span>
+      <span id="modeBadge" class="badge"></span>
+    </div>
+    <p class="note" id="modeNote" style="margin-top:10px"></p>
+    <p class="note">Unit check: Leg1 × Leg2 ÷ Leg3 is SOL per STOXX 50 share (about 38.29 SOL at the defaults). The inverted mark is therefore STOXX 50 shares per SOL (about 0.0261), not “SOL per STOXX50” as the README’s comment reads.</p>
+  </div>
+</section>
+
+<!-- 02 CLOCK -->
+<section id="clock">
+  <div class="sec-head"><span class="sec-num">02 · Schedules</span><h2>The clock problem</h2></div>
+  <p class="sec-sub">Leg 1 stops publishing when Euronext closes at 17:30 Paris time. In November that is 16:30 UTC; in summer it is 15:30 UTC. Once Leg 1 is older than 600 s the wrapper switches to HYBRID_AFTER_HOURS: EWMA mark and a dynamic fee.</p>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h3 style="margin:0">24-hour feed map (UTC)</h3>
+      <div class="toggle" role="group" aria-label="DST season">
+        <button id="dstW" class="on" type="button">Winter CET</button><button id="dstS" type="button">Summer CEST</button>
+      </div>
+    </div>
+    <div class="feedmap" style="margin-top:14px">
+      <div class="fm-row"><div>Leg 1 STOXX50</div><div class="fm-track"><div class="fm-open" id="fmL1"></div><div class="fm-now" id="nowL1"></div></div></div>
+      <div class="fm-row"><div>Leg 2 EUR/USD</div><div class="fm-track"><div class="fm-open" style="left:0;right:0"></div><div class="fm-now" id="nowL2"></div></div></div>
+      <div class="fm-row"><div>Leg 3 SOL/USD</div><div class="fm-track"><div class="fm-open" style="left:0;right:0"></div><div class="fm-now" id="nowL3"></div></div></div>
+      <div class="fm-hours"><div></div><div class="ticks"><span style="left:0%">00:00</span><span style="left:12.5%">03:00</span><span style="left:25%">06:00</span><span style="left:37.5%">09:00</span><span style="left:50%">12:00</span><span style="left:62.5%">15:00</span><span style="left:75%">18:00</span><span style="left:87.5%">21:00</span><span style="left:100%">24:00</span></div></div>
+    </div>
+    <label class="f" for="tod" style="margin-top:18px">Time of day — <span id="todVal">18:00</span> UTC</label>
+    <input type="range" id="tod" min="0" max="1439" value="1080">
+    <div class="grid2" style="margin-top:14px">
+      <div><div class="small">Market mode</div><div class="out" id="clockMode" style="font-size:18px;font-weight:700"></div><div class="note" id="clockWhy"></div></div>
+      <div><div class="small">Fee path</div><div class="out" id="clockFee" style="font-size:18px;font-weight:700"></div><div class="note">Pyth shard gaps of 27+ minutes have been observed, so Leg 1 can also go stale intraday.</div></div>
+    </div>
+    <p class="note" style="margin-top:12px">Schematic: Leg 1 window shown as the Euronext cash session, 08:00–16:30 UTC in winter (09:00–17:30 Paris), one hour earlier in UTC during CEST. Legs 2 and 3 publish around the clock on weekdays.</p>
+  </div>
+</section>
+
+<!-- 03 EWMA -->
+<section id="ewma">
+  <div class="sec-head"><span class="sec-num">03 · Stale-oracle pricing</span><h2>The EWMA mark keeps the market alive</h2></div>
+  <div class="card">
+    <div class="formula">decay&nbsp;&nbsp;&nbsp; = 2^(−dt / halflife)&nbsp;&nbsp;<span class="c">// halflife = 6,480,000 slots ≈ 30 days</span><br>ewma_new = ewma_prev × decay + target × (1 − decay)</div>
+    <p class="note">With a 30-day half-life, an overnight gap of roughly 54,000 slots (6 hours at 400 ms) moves the EWMA by well under one percent of the gap to its target. The mark stays stable after hours and re-anchors once the live composite returns.</p>
+    <div class="grid3">
+      <div><label class="f" for="dt">dt (slots)</label><input type="number" id="dt" value="12000" step="1"></div>
+      <div><label class="f" for="eprev">ewma_prev (e6)</label><input type="number" id="eprev" value="38420000" step="1"></div>
+      <div><label class="f" for="etgt">target (e6)</label><input type="number" id="etgt" value="36470000" step="1"></div>
+    </div>
+    <svg id="ewmaSvg" viewBox="0 0 640 150" style="width:100%;margin-top:18px" role="img" aria-label="EWMA decay curve over 60 days">
+      <line x1="40" y1="10" x2="40" y2="120" stroke="#2e2e4d"/><line x1="40" y1="120" x2="620" y2="120" stroke="#2e2e4d"/>
+      <path id="ewmaPath" fill="none" stroke="#9945FF" stroke-width="2.5"/>
+      <circle id="ewmaDot" r="5" fill="#14F195"/>
+      <text x="40" y="140" fill="#6d6d8c" font-size="11" font-family="monospace">0</text>
+      <text x="320" y="140" fill="#6d6d8c" font-size="11" font-family="monospace" text-anchor="middle">30 d</text>
+      <text x="615" y="140" fill="#6d6d8c" font-size="11" font-family="monospace" text-anchor="end">60 d</text>
+      <text x="6" y="20" fill="#6d6d8c" font-size="11" font-family="monospace">1.0</text>
+      <text x="6" y="70" fill="#6d6d8c" font-size="11" font-family="monospace">0.5</text>
+      <text x="6" y="122" fill="#6d6d8c" font-size="11" font-family="monospace">0.0</text>
+    </svg>
+    <div class="grid3" style="margin-top:6px">
+      <div><div class="small">decay</div><div class="out big" id="decayOut">—</div><div class="note" id="decayNote"></div></div>
+      <div><div class="small">ewma_new (e6)</div><div class="out big" id="ewmaOut">—</div><div class="note" id="ewmaMove"></div></div>
+      <div><div class="small">fee</div><div class="out big" id="ewmaFee">—</div><div class="note">1 bps base + EWMA move</div></div>
+    </div>
+    <p class="note" style="margin-top:12px">Defaults reproduce the README’s after-hours trade: dt 12,000 slots, ewma 38,420,000 → ≈38,417,500, a 0.65 bps move, so the fee is ≈1.65 bps.</p>
+  </div>
+</section>
+
+<!-- 04 FEE -->
+<section id="fee">
+  <div class="sec-head"><span class="sec-num">04 · Defense</span><h2>The hybrid fee makes manipulation lose money</h2></div>
+  <div class="card">
+    <div class="formula">fee_bps = min( base_bps + |ewma_now − ewma_ref| × 10⁴ / ewma_ref , 10,000 )<br><span class="c">base_bps = 1</span></div>
+    <p class="note">Anyone who drags the after-hours mark by X bps can earn at most X bps of notional from it, and pays 1 + X bps to do so. The best case is a loss of the base fee.</p>
+    <div class="grid2">
+      <div><label class="f" for="atkMove">Mark move caused, X (bps) — <span id="atkMoveVal">150</span> bps</label><input type="range" id="atkMove" min="0" max="2000" value="150"></div>
+      <div><label class="f" for="atkNot">Notional (SOL)</label><input type="number" id="atkNot" value="100" step="any"></div>
+    </div>
+    <div class="bar-wrap"><div class="bar-lab"><span>Fee paid</span><span id="feePaidLab"></span></div><div class="bar"><i id="feeBar" style="background:linear-gradient(90deg,#ff5d73,#ffb454)"></i></div></div>
+    <div class="bar-wrap"><div class="bar-lab"><span>Max profit from move</span><span id="profLab"></span></div><div class="bar"><i id="profBar" style="background:linear-gradient(90deg,#9945FF,#14F195)"></i></div></div>
+    <div class="grid3" style="margin-top:14px">
+      <div><div class="small">Fee charged</div><div class="out big" id="feePaidOut">—</div><div class="note" id="feeBpsOut"></div></div>
+      <div><div class="small">Max profit from move</div><div class="out big" id="profOut">—</div><div class="note">≤ X bps × notional</div></div>
+      <div><div class="small">Best-case net</div><div class="out big" id="netOut" style="color:var(--red)">—</div><div class="note">Fee goes to the insurance fund · <b style="color:var(--red)">attack loses</b></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 SLAB -->
+<section id="slab">
+  <div class="sec-head"><span class="sec-num">05 · Memory map</span><h2>Inside the slab</h2></div>
+  <p class="sec-sub">Everything lives at fixed BPF offsets. The header and config are tiny next to the risk engine, which is almost all per-account records. Select a region.</p>
+  <div class="card">
+    <div class="slabmap" role="group" aria-label="Slab regions">
+      <button type="button" class="r-head" data-region="head">HEADER</button>
+      <button type="button" class="r-conf" data-region="conf">CONFIG</button>
+      <button type="button" class="r-risk sel" data-region="risk">RISK ENGINE</button>
+    </div>
+    <p class="small">Widths not to scale. Real share: header 0.008%, config 0.03%, engine 99.96%.</p>
+    <div id="regionBody" class="stepbody" style="margin-top:10px"></div>
+    <h3 style="margin-top:20px">Pyth PriceUpdateV2, as the wrapper reads it</h3>
+    <table>
+      <tr><th>Offset</th><th>Bytes</th><th>Field</th><th>Use</th></tr>
+      <tr><td class="mono">0</td><td class="mono">8</td><td class="mono">Anchor discriminator</td><td></td></tr>
+      <tr><td class="mono">41</td><td class="mono">32</td><td class="mono">feed_id</td><td>Must match the leg’s feed ID in config</td></tr>
+      <tr><td class="mono">73</td><td class="mono">8</td><td class="mono">price i64</td><td>Mantissa</td></tr>
+      <tr><td class="mono">89</td><td class="mono">4</td><td class="mono">exponent i32</td><td>price × 10^exp</td></tr>
+      <tr><td class="mono">93</td><td class="mono">8</td><td class="mono">publish_time i64</td><td>Staleness check: now − publish_time &gt; 600</td></tr>
+      <tr><td class="mono">125</td><td class="mono">8</td><td class="mono">posted_slot</td><td></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 06 CRANK -->
+<section id="crank">
+  <div class="sec-head"><span class="sec-num">06 · Liveness</span><h2>The keeper crank</h2></div>
+  <p class="sec-sub">KeeperCrank is permissionless. Without it funding does not accrue and underwater accounts stay open. Step through one call.</p>
+  <div class="card">
+    <div class="steps" id="crankSteps"></div>
+    <div class="stepbody" id="crankBody"></div>
+    <div class="btnrow">
+      <button class="btn ghost" id="crankPrev" type="button">Previous step</button>
+      <button class="btn" id="crankNext" type="button">Next step</button>
+    </div>
+    <p class="small" style="margin-top:14px"># accounts: caller(signer) · slab(w) · clock · leg1 · leg2 · leg3</p>
+    <pre>percolator-cli keeper-crank \
+  --slab   GSAT5fTCUgB9sMMTBsVzhvALbkSv6p9CifWmShHf92hj \
+  --oracle C2Cf16vF6LX8GrWJwfZga5z5tjVsax5VWnL2T7Q8CF91</pre>
+  </div>
+</section>
+
+<!-- 07 PARAMS -->
+<section id="params">
+  <div class="sec-head"><span class="sec-num">07 · Config</span><h2>Bounty4 parameters</h2></div>
+  <div class="card">
+    <table>
+      <tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr>
+      <tr><td class="mono">maintenance_margin_bps</td><td class="mono">500</td><td>5% maintenance margin, 20× max</td></tr>
+      <tr><td class="mono">initial_margin_bps</td><td class="mono">500</td><td>No opening buffer (IM = MM)</td></tr>
+      <tr><td class="mono">trade_fee_base_bps</td><td class="mono">1</td><td>0.01% base, plus EWMA move after hours</td></tr>
+      <tr><td class="mono">max_trading_fee_bps</td><td class="mono">10,000</td><td>100% fee cap</td></tr>
+      <tr><td class="mono">liquidation_fee_bps</td><td class="mono">5</td><td>0.05% per liquidation</td></tr>
+      <tr><td class="mono">liquidation_fee_cap</td><td class="mono">50,000,000,000 lam</td><td>50 SOL cap (the README labels this “$50k”)</td></tr>
+      <tr><td class="mono">h_min / h_max</td><td class="mono">0 / 6,480,000</td><td>Profit warm-up from 0 to ~30 days</td></tr>
+      <tr><td class="mono">max_price_move_bps_per_slot</td><td class="mono">49</td><td>§1.4 solvency envelope</td></tr>
+      <tr><td class="mono">tvl_insurance_cap_mult</td><td class="mono">50</td><td>Deposits ≤ 50× insurance</td></tr>
+      <tr><td class="mono">max_staleness_secs</td><td class="mono">600</td><td>Per-leg freshness window</td></tr>
+      <tr><td class="mono">markEwmaHalflifeSlots</td><td class="mono">6,480,000</td><td>~30-day EWMA half-life</td></tr>
+      <tr><td class="mono">permissionless_resolve_stale_slots</td><td class="mono">6,480,000</td><td>~30 days before anyone can force-resolve</td></tr>
+      <tr><td class="mono">force_close_delay_slots</td><td class="mono">216,000</td><td>~24 h grace after resolution</td></tr>
+      <tr><td class="mono">insurance_fund</td><td class="mono">5 SOL</td><td>Seeded bounty target</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 08 FINDINGS -->
+<section id="findings">
+  <div class="sec-head"><span class="sec-num">08 · Bounty scope</span><h2>Open findings</h2></div>
+  <p class="sec-sub">Listed in issue.md, ordered by expected exploitability on bounty4. Win condition: engine.insurance_fund.balance decreases via public instructions.</p>
+  <div class="card">
+    <table>
+      <tr><th>ID</th><th>Severity</th><th>Finding</th><th>Applies to bounty4</th></tr>
+      <tr><td class="mono">D</td><td><span class="sev med">Medium</span></td><td>Partial liquidation can cascade to full close in the same crank after mark-PnL settlement drains capital.</td><td>Yes</td></tr>
+      <tr><td class="mono">B</td><td><span class="sev med">Medium</span></td><td>Warm-up settlement order is deterministic by account index, so early accounts get a better haircut.</td><td>Yes</td></tr>
+      <tr><td class="mono">N</td><td><span class="sev med">Medium</span></td><td>Warm-up slope floor of 1 lets 1-lamport PnL warm in one slot.</td><td>Marginal; net negative after tx fees</td></tr>
+      <tr><td class="mono">O</td><td><span class="sev low">Low</span></td><td>close_account skips the freshness check.</td><td>Only zero-position, zero-PnL accounts</td></tr>
+      <tr><td class="mono">P</td><td><span class="sev high">High</span></td><td>TradeCpi accepts an arbitrary mark from a malicious matcher.</td><td>No matcher here; only TradeNoCpi</td></tr>
+      <tr><td class="mono">Q</td><td><span class="sev med">Medium</span></td><td>oracle_price_cap_e2bps = 0 lets the index jump instantly.</td><td>Hyperp mode only</td></tr>
+      <tr><td class="mono">I</td><td><span class="sev med">Medium</span></td><td>No cross-parameter validation on admin config updates.</td><td>Yes; admin key not burned</td></tr>
+    </table>
+    <h3 style="margin-top:22px">Provenance</h3>
+    <dl class="kv">
+      <dt>Program</dt><dd>4ToDRrQW5j3oeQm8uTAwV9Rp6NhYfH5E5hMKcXkqfwfz</dd>
+      <dt>BPF sha256</dt><dd>408cbaa53403c54474c9b3e085f27571e7af293cfe12845316683bd6fdc5d7fc</dd>
+      <dt>BPF size</dt><dd>536,432 bytes</dd>
+      <dt>Engine pin</dt><dd>1dc4466e (percolator)</dd>
+      <dt>Prog pin</dt><dd>f626639 (percolator-prog)</dd>
+      <dt>SLAB_LEN</dt><dd>1,755,520 bytes (MAX_ACCOUNTS = 4096)</dd>
+    </dl>
+    <pre><span class="cm"># verify</span>
+solana program dump -u m 4ToDRrQW5j3oeQm8uTAwV9Rp6NhYfH5E5hMKcXkqfwfz /tmp/bounty4.so
+sha256sum /tmp/bounty4.so</pre>
+  </div>
+</section>
+
+<div class="part">Part II · Design Proposal</div>
+
+<!-- 09 DARK INTRO -->
+<section id="dark">
+  <div class="sec-head"><span class="sec-num">09 · Motivation</span><h2>Dark Percolator</h2></div>
+  <p class="sec-sub">The same risk engine, executed inside a MagicBlock Private Ephemeral Rollup on Intel TDX. Positions, intents and liquidation prices are readable only by the accounts the program lists. Collateral, insurance and aggregate open interest still settle on Solana where anyone can audit them.</p>
+  <div class="status">
+    <span class="warn">Status: design, devnet-first</span>
+    <span class="warn">Nothing deployed or funded</span>
+    <span class="warn">Our composition, not a MagicBlock product</span>
+  </div>
+  <div class="card">
+    <h3>What a public slab leaks</h3>
+    <p class="note" style="font-size:14.5px;color:var(--txt)">Every Percolator account record is world-readable. Anyone can decode the slab, sort accounts by leverage exactly as the crank does, and compute each trader’s liquidation price. That invites stop-hunting near thin after-hours books, copy-trading of size, and front-running of intent.</p>
+    <p class="note" style="font-size:14.5px;color:var(--txt)">A Private Ephemeral Rollup changes who can read state, not what the program does. Delegated accounts execute in a TEE validator at ER speed; the permission program decides which wallets see logs, balances and messages; and state commits back to Solana on our schedule.</p>
+  </div>
+</section>
+
+<!-- 10 ARCHITECTURE -->
+<section id="arch">
+  <div class="sec-head"><span class="sec-num">10 · Architecture</span><h2>Two layers, one engine</h2></div>
+  <div class="card">
+    <div class="arch">
+      <div class="col">
+        <h3>Solana base layer · public</h3>
+        <div class="box"><b>Market account</b><span>vault · insurance · params · agg OI</span></div>
+        <div class="box"><b>Trader position PDAs</b><span>collateral; owned by delegation prog</span></div>
+        <div class="box"><b>Pyth PriceUpdateV2 ×3</b><span>STOXX50/EUR · EUR/USD · SOL/USD</span></div>
+        <div class="box"><b>Phoenix perps</b><span>residual hedge venue</span></div>
+        <div class="box"><b>Programs</b><span class="mono">Delegation DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh<br>Permission ACLseoPoyC3cBqoUtkbjZ4aDrkurZW86v19pXz2XQnp1</span></div>
+      </div>
+      <div class="col tee">
+        <h3>Private ER · TEE (Intel TDX)</h3>
+        <div class="box"><b>Dark position PDAs</b><span>size · entry · liq price · PnL</span></div>
+        <div class="box"><b>Sealed intent book</b><span>batch-crossed at oracle mark</span></div>
+        <div class="box"><b>Risk engine + crank</b><span>funding · liquidation · EWMA</span></div>
+        <div class="box"><b>EphemeralPermission per PDA</b><span>owner + auditor members</span></div>
+        <div class="box"><b>TEE validator</b><span class="mono">MTEWGuqxUpYZGFJQcp8tLN7x5v9BSeoFHYWQQ3n3xzo</span></div>
+      </div>
+    </div>
+    <div class="flowline">delegate → delegate market · price reads → commit + Magic Action → agg commit → base</div>
+    <p class="note">Price reads into the ER are an open question: delegated programs read base-layer accounts the validator clones, and MagicBlock also runs its own pricing oracle. Freshness rules must be re-validated for whichever path we use.</p>
+  </div>
+</section>
+
+<!-- 11 SPLIT -->
+<section id="split">
+  <div class="sec-head"><span class="sec-num">11 · The key change</span><h2>Break the slab apart</h2></div>
+  <p class="sec-sub">Permissions in a PER are per account. If we delegate the 1.75 MB slab as-is, its member list is all-or-nothing: every listed wallet sees every trader. So Dark Percolator splits state:</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Market account (one)</h3>
+      <p class="note" style="font-size:14.5px;color:var(--txt)">Vault, insurance fund, params, EWMA, aggregate long and short OI, funding index. Delegated with an empty member list while trading runs, and its aggregates are published on every commit so insurance solvency stays auditable.</p>
+    </div>
+    <div class="card">
+      <h3>Position PDA (one per trader)</h3>
+      <p class="note" style="font-size:14.5px;color:var(--txt)">Seeds <span class="mono">["pos", market, owner]</span>. Holds size, entry, margin and PnL. Its EphemeralPermission lists the owner with TX_LOGS | TX_BALANCES | TX_MESSAGE plus an optional auditor key. Rent for the permission is pre-funded at open.</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">The crank no longer sorts accounts off-chain by public leverage. It runs inside the TEE over the PDAs the market tracks, so nobody outside can build the liquidation queue.</p>
+</section>
+
+<!-- 12 ACCESS -->
+<section id="access">
+  <div class="sec-head"><span class="sec-num">12 · Access control</span><h2>Who sees what</h2></div>
+  <p class="sec-sub">Choose a viewer. Each column maps to member flags on the EphemeralPermission accounts.</p>
+  <div class="card">
+    <div class="viewerrow" id="viewerRow">
+      <button class="btn on" type="button" data-viewer="public">Public RPC</button>
+      <button class="btn" type="button" data-viewer="trader">Trader (own PDA)</button>
+      <button class="btn" type="button" data-viewer="other">Other trader</button>
+      <button class="btn" type="button" data-viewer="auditor">Risk auditor</button>
+      <button class="btn" type="button" data-viewer="authority">Market authority</button>
+    </div>
+    <p class="note" style="margin-top:10px">Flags held: <span class="mono" id="viewerFlags"></span></p>
+    <table>
+      <tr><th>Data</th><th>Percolator today</th><th>Dark Percolator · <span id="viewerName"></span></th></tr>
+      <tbody id="accessBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 13 DARK POOL -->
+<section id="pool">
+  <div class="sec-head"><span class="sec-num">13 · Liquidity</span><h2>Dark pools for Phoenix and Solana perps</h2></div>
+  <p class="sec-sub">Traders submit sealed intents into the PER. Each batch crosses buys against sells at the oracle mark, pro rata on the heavier side. Only the net residual leaves the rollup, as a hedge order on Phoenix fired by a Magic Action after the commit lands. Matched flow never touches a public book.</p>
+  <div class="card">
+    <h3>Batch cross simulator · SOL-PERP</h3>
+    <div class="grid2">
+      <div><label class="f" for="markUsd">Oracle mark (USD, example)</label><input type="number" id="markUsd" value="148.00" step="any"></div>
+      <div><label class="f">View</label>
+        <div class="toggle" role="group" aria-label="Simulator view">
+          <button id="viewPublic" class="on" type="button">Public view</button><button id="viewYours" type="button">Your view</button><button id="viewAuditor" type="button">Auditor view</button>
+        </div>
+      </div>
+    </div>
+    <table>
+      <tr><th>Intent</th><th>Trader</th><th>Side</th><th>Size (SOL)</th><th>Filled in pool</th></tr>
+      <tbody id="intentBody"></tbody>
+    </table>
+    <div class="btnrow">
+      <button class="btn ghost" id="addIntents" type="button">Add 6 intents</button>
+      <button class="btn" id="crossBtn" type="button">Cross batch</button>
+      <button class="btn ghost" id="resetIntents" type="button">Reset</button>
+    </div>
+    <div class="grid3" style="margin-top:16px">
+      <div><div class="small">Crossed in dark</div><div class="out big" id="crossedOut">—</div><div class="note">at oracle mark, no book impact</div></div>
+      <div><div class="small">Residual to Phoenix</div><div class="out big" id="residOut">—</div><div class="note">via post-commit Magic Action</div></div>
+      <div><div class="small">Public learns</div><div class="note" id="publicLearns" style="font-size:14px;color:var(--txt)">Nothing yet. Intents are sealed until the batch crosses.</div></div>
+    </div>
+    <p class="note" style="margin-top:14px">Magic Action handlers are ordinary base-layer instructions that anyone can call directly. The hedge handler must verify the injected escrow signer before it routes size to Phoenix, or anyone could trigger hedges.</p>
+  </div>
+</section>
+
+<!-- 14 LIFECYCLE -->
+<section id="lifecycle">
+  <div class="sec-head"><span class="sec-num">14 · Lifecycle</span><h2>One trader, one round trip</h2></div>
+  <div class="card">
+    <div class="steps" id="lifeSteps"></div>
+    <div class="stepbody" id="lifeBody"></div>
+    <div class="btnrow">
+      <button class="btn ghost" id="lifePrev" type="button">Previous</button>
+      <button class="btn" id="lifeNext" type="button">Next</button>
+    </div>
+    <h3 style="margin-top:22px">Program sketch</h3>
+    <p class="small">Shape only, against ephemeral-rollups-sdk v0.14+. Not compiled or audited.</p>
+    <pre>#[ephemeral]
+#[program]
+pub mod dark_percolator {
+    <span class="cm">/// base: create position PDA, take collateral, pre-fund permission rent</span>
+    pub fn open_position(ctx: Context&lt;Open&gt;, collateral: u64) -&gt; Result&lt;()&gt;;
+
+    <span class="cm">/// base: delegate PDA to the TEE validator</span>
+    pub fn delegate_position(ctx: Context&lt;DelegatePos&gt;) -&gt; Result&lt;()&gt;;
+
+    <span class="cm">/// ER: PDA-signed CreateEphemeralPermissionCpi, then make private</span>
+    pub fn seal(ctx: Context&lt;PermCtx&gt;, auditor: Option&lt;Pubkey&gt;) -&gt; Result&lt;()&gt; {
+        let mut members = vec![Member {
+            flags: TX_LOGS_FLAG | TX_BALANCES_FLAG | TX_MESSAGE_FLAG,
+            pubkey: ctx.accounts.position.owner,
+        }];
+        if let Some(a) = auditor {
+            members.push(Member { flags: TX_BALANCES_FLAG, pubkey: a });
+        }
+        UpdateEphemeralPermissionCpi { <span class="cm">/* … */</span>
+            args: EphemeralMembersArgs { is_private: true, members },
+        }.invoke_signed(&amp;[&amp;pos_seeds])?;
+        Ok(())
+    }
+
+    <span class="cm">/// ER: sealed intent, readable only by owner + auditor</span>
+    pub fn submit_intent(ctx: Context&lt;Intent&gt;, side: Side, size: u64, limit_e6: u64) -&gt; Result&lt;()&gt;;
+
+    <span class="cm">/// ER: cross the batch at the composite/EWMA mark, pro rata</span>
+    pub fn cross_batch(ctx: Context&lt;Cross&gt;) -&gt; Result&lt;()&gt;;
+
+    <span class="cm">/// ER: funding, liquidation, EWMA — same engine as Percolator</span>
+    pub fn crank(ctx: Context&lt;Crank&gt;) -&gt; Result&lt;()&gt;;
+
+    <span class="cm">/// ER: commit aggregates, then hedge residual on Phoenix</span>
+    pub fn commit_and_hedge(ctx: Context&lt;CommitHedge&gt;) -&gt; Result&lt;()&gt; {
+        MagicIntentBundleBuilder::new(payer, magic_context, magic_program)
+            .commit(&amp;[ctx.accounts.market.to_account_info()])
+            .add_post_commit_actions([hedge_residual_action])
+            .build_and_invoke()?;
+        Ok(())
+    }
+
+    <span class="cm">/// base: called by the post-commit action; MUST check the escrow signer</span>
+    pub fn hedge_residual(ctx: Context&lt;Hedge&gt;) -&gt; Result&lt;()&gt;;
+}</pre>
+  </div>
+</section>
+
+<!-- 15 CONSTRAINTS -->
+<section id="constraints">
+  <div class="sec-head"><span class="sec-num">15 · Constraints</span><h2>What this does not solve</h2></div>
+  <div class="card">
+    <table>
+      <tr><th style="width:210px">Constraint</th><th>Reality</th></tr>
+      <tr><td><b>Hardware trust</b></td><td>Privacy rests on Intel TDX and on MagicBlock running the validator honestly. It is a vendor trust assumption, not a cryptographic proof.</td></tr>
+      <tr><td><b>Hosted and gated</b></td><td>A PER cannot be self-hosted, and mainnet ER endpoints are team-gated. Devnet devnet-tee.magicblock.app is the only open path today.</td></tr>
+      <tr><td><b>Compliance at ingress</b></td><td>MagicBlock blocks restricted jurisdictions by IP and screens flows with Range. Dark Percolator is private, not anonymous, and some users will be refused.</td></tr>
+      <tr><td><b>Commit costs</b></td><td>An account without a fee payer stops after 10 commits; with one, live commit fees start at commit 26. Commit cadence sets how fresh public aggregates are.</td></tr>
+      <tr><td><b>Oracle inside the ER</b></td><td>The three-leg composite and its 600 s rule must hold on whatever price path the TEE reads, or the hybrid fee loses its anchor.</td></tr>
+      <tr><td><b>Same engine bugs</b></td><td>Findings D, B, N and I move with the engine. Hiding state makes them harder to observe, not fixed.</td></tr>
+    </table>
+    <p style="margin-top:16px"><b>Perps at 20× are high risk, dark or not. Nothing here is a recommendation to trade.</b></p>
+  </div>
+</section>
+
+<!-- 16 PLAN -->
+<section id="plan">
+  <div class="sec-head"><span class="sec-num">16 · Plan</span><h2>Build plan</h2></div>
+  <div class="grid2" style="margin-top:18px">
+    <div class="card" style="margin-top:0"><h3><span class="mono" style="color:var(--grn)">D0</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">Run MagicBlock’s private-counter example end to end on devnet TEE: delegate, permission, auth token, private read, undelegate.</p></div>
+    <div class="card" style="margin-top:0"><h3><span class="mono" style="color:var(--grn)">D1</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">Split the slab: market account plus per-trader position PDAs on devnet with test collateral. Port the engine unchanged and diff outputs against public Percolator.</p></div>
+    <div class="card" style="margin-top:0"><h3><span class="mono" style="color:var(--grn)">D2</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">Sealed intents and batch crossing at the composite mark. Publish aggregate OI and insurance on each commit.</p></div>
+    <div class="card" style="margin-top:0"><h3><span class="mono" style="color:var(--grn)">D3</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">Residual hedge to Phoenix devnet through a post-commit Magic Action with an escrow-signer check.</p></div>
+    <div class="card" style="margin-top:0"><h3><span class="mono" style="color:var(--grn)">D4</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">External audit, MagicBlock mainnet access, then a separate go-ahead and funding decision. Independent of Percolator Route A.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p>Percolator sources: bounty4 README, on-chain program 4ToDRr…fwfz. MagicBlock sources: PER quickstart, access control, authorization, onchain privacy and compliance docs.</p>
+  <p>Calculator values are examples, not live market data. Status: design, devnet-first · Nothing deployed or funded · Our composition, not a MagicBlock product.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+function num(id){var v=parseFloat($(id).value);return isFinite(v)?v:0}
+function fmt(n,d){return n.toLocaleString('en-US',{minimumFractionDigits:d||0,maximumFractionDigits:d||0})}
+function on(id,ev,fn){$(id).addEventListener(ev,fn)}
+
+/* ---------- 01 oracle ---------- */
+function oracle(){
+  var l1=num('l1'),l2=num('l2'),l3=num('l3');
+  var raw=(l3!==0)?(l1*l2/l3):0;
+  var rawE6=Math.round(raw*1e6);
+  var markE6=rawE6>0?Math.round(1e12/rawE6):0;
+  $('rawOut').textContent=fmt(rawE6);
+  $('rawApprox').textContent='≈ '+raw.toFixed(4)+' SOL per share';
+  $('markOut').textContent=fmt(markE6);
+  $('markApprox').textContent='≈ '+(markE6/1e6).toFixed(6)+' shares per SOL';
+  var ages=[num('a1'),num('a2'),num('a3')],anyStale=false;
+  for(var i=0;i<3;i++){
+    var b=$('b'+(i+1)),stale=ages[i]>600; if(stale)anyStale=true;
+    b.className='badge '+(stale?'stale':'fresh');
+    b.textContent='L'+(i+1)+' '+(stale?'stale':'fresh');
+  }
+  var m=$('modeBadge');
+  if(anyStale){m.className='badge mode';m.textContent='HYBRID_AFTER_HOURS';
+    $('modeNote').textContent='A stale leg sends trades to the EWMA path.';}
+  else{m.className='badge live';m.textContent='LIVE COMPOSITE';
+    $('modeNote').textContent='All legs fresh — trades price off the live composite.';}
+}
+['l1','l2','l3','a1','a2','a3'].forEach(function(id){on(id,'input',oracle)}); oracle();
+
+/* ---------- 02 clock ---------- */
+var season='winter';
+function clockCalc(){
+  var openH=season==='winter'?8:7, closeH=season==='winter'?16.5:15.5;
+  $('fmL1').style.left=(openH/24*100)+'%';
+  $('fmL1').style.width=((closeH-openH)/24*100)+'%';
+  var mins=num('tod'),h=mins/60;
+  var hh=Math.floor(mins/60),mm=mins%60;
+  $('todVal').textContent=(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm;
+  ['nowL1','nowL2','nowL3'].forEach(function(id){$(id).style.left=(h/24*100)+'%'});
+  var live=h>=openH&&h<closeH;
+  $('clockMode').textContent=live?'LIVE COMPOSITE':'HYBRID_AFTER_HOURS';
+  $('clockMode').style.color=live?'var(--grn)':'var(--amb)';
+  $('clockWhy').textContent=live?'Euronext open; Leg 1 publishing.':'Euronext closed; Leg 1 goes stale after 600 s.';
+  $('clockFee').textContent=live?'1 bps base':'1 bps + EWMA move';
+}
+on('tod','input',clockCalc);
+$('dstW').addEventListener('click',function(){season='winter';$('dstW').className='on';$('dstS').className='';clockCalc()});
+$('dstS').addEventListener('click',function(){season='summer';$('dstS').className='on';$('dstW').className='';clockCalc()});
+clockCalc();
+
+/* ---------- 03 EWMA ---------- */
+var HL=6480000;
+function ewma(){
+  var dt=num('dt'),prev=num('eprev'),tgt=num('etgt');
+  var decay=Math.pow(2,-dt/HL);
+  var nw=prev*decay+tgt*(1-decay);
+  var move=prev!==0?Math.abs(nw-prev)/prev*1e4:0;
+  $('decayOut').textContent=decay.toFixed(6);
+  $('decayNote').textContent='≈ '+(dt*0.4/3600).toFixed(1)+' hours at 400 ms slots';
+  $('ewmaOut').textContent=fmt(Math.round(nw));
+  $('ewmaMove').textContent='move '+move.toFixed(2)+' bps from ewma_prev';
+  $('ewmaFee').textContent=(1+move).toFixed(2)+' bps';
+  var pts=[];
+  for(var d=0;d<=60;d+=1.5){var x=40+d/60*580,y=120-Math.pow(2,-(d*216000)/HL)*110;pts.push((d===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(1))}
+  $('ewmaPath').setAttribute('d',pts.join(' '));
+  var days=dt/216000,dx=40+Math.min(days,60)/60*580,dy=120-decay*110;
+  var dot=$('ewmaDot');dot.setAttribute('cx',dx);dot.setAttribute('cy',dy);
+}
+['dt','eprev','etgt'].forEach(function(id){on(id,'input',ewma)}); ewma();
+
+/* ---------- 04 attack payoff ---------- */
+function attack(){
+  var x=num('atkMove'),not=num('atkNot');
+  $('atkMoveVal').textContent=x;
+  var feeBps=Math.min(1+x,10000);
+  var fee=not*feeBps/1e4, prof=not*x/1e4, net=prof-fee;
+  $('feePaidOut').textContent=fee.toFixed(4)+' SOL';
+  $('feeBpsOut').textContent=fmt(feeBps)+' bps';
+  $('profOut').textContent=prof.toFixed(4)+' SOL';
+  $('netOut').textContent=(net>0?'+':'')+net.toFixed(4)+' SOL';
+  $('netOut').style.color=net<0?'var(--red)':'var(--grn)';
+  $('feePaidLab').textContent=fee.toFixed(4)+' SOL';
+  $('profLab').textContent=prof.toFixed(4)+' SOL';
+  var mx=Math.max(fee,prof,0.0001);
+  $('feeBar').style.width=(fee/mx*100)+'%';
+  $('profBar').style.width=(prof/mx*100)+'%';
+}
+on('atkMove','input',attack); on('atkNot','input',attack); attack();
+
+/* ---------- 05 slab regions ---------- */
+var regions={
+  head:{t:'HEADER — offset 0 · ≈140 bytes · 0.008% of the slab',
+    d:'The market header: identity and layout anchors for the 1,755,520-byte account. Tiny next to the engine it describes.'},
+  conf:{t:'CONFIG — offset ≈140 · ≈524 bytes · 0.03% of the slab',
+    d:'The Bounty4 parameters of §07 — margins, fee schedule, staleness window, EWMA half-life, insurance caps — plus the three Pyth feed IDs the wrapper matches against offset 41 of each PriceUpdateV2.'},
+  risk:{t:'Offset 664 · 1,721,928 bytes — RISK ENGINE',
+    d:'4,096 account records at 416 bytes each.<br><span class="mono">[+0..16]</span> vault balance u128<br><span class="mono">[+16..32]</span> insurance fund u128 ← bounty target<br><span class="mono">[+200]</span> currentSlot<br><span class="mono">[+472..488]</span> oiEffLongQ · oiEffShortQ<br><span class="mono">[+824]</span> materializedAccountCount<br><span class="mono">[+1088..]</span> account bitmap → per-account records'}
+};
+function region(k){
+  document.querySelectorAll('.slabmap button').forEach(function(b){b.classList.toggle('sel',b.getAttribute('data-region')===k)});
+  $('regionBody').innerHTML='<h3 style="margin-top:0">'+regions[k].t+'</h3><p class="note" style="font-size:14.5px;color:var(--txt)">'+regions[k].d+'</p>';
+}
+document.querySelectorAll('.slabmap button').forEach(function(b){b.addEventListener('click',function(){region(b.getAttribute('data-region'))})});
+region('risk');
+
+/* ---------- steppers ---------- */
+function makeStepper(chipsId,bodyId,prevId,nextId,steps){
+  var i=0;
+  var chips=$(chipsId);chips.innerHTML='';
+  steps.forEach(function(s,idx){var sp=document.createElement('span');sp.className='st';sp.textContent=(idx+1)+' '+s.t;chips.appendChild(sp)});
+  function render(){
+    var kids=chips.children;for(var j=0;j<kids.length;j++)kids[j].classList.toggle('on',j===i);
+    $(bodyId).innerHTML='<h3 style="margin-top:0">'+steps[i].t+' <span class="small">'+steps[i].tag+'</span></h3><p class="note" style="font-size:14.5px;color:var(--txt)">'+steps[i].d+'</p>';
+    $(prevId).disabled=i===0;$(nextId).disabled=i===steps.length-1;
+  }
+  $(prevId).addEventListener('click',function(){if(i>0){i--;render()}});
+  $(nextId).addEventListener('click',function(){if(i<steps.length-1){i++;render()}});
+  render();
+}
+makeStepper('crankSteps','crankBody','crankPrev','crankNext',[
+ {t:'Read the slot',tag:'',d:'Read the current slot from the Clock sysvar.'},
+ {t:'Check freshness',tag:'',d:'Check freshness of Leg 1, Leg 2 and Leg 3. Any stale leg switches pricing to the EWMA mark and the dynamic fee.'},
+ {t:'Accrue funding',tag:'',d:'Accrue funding for elapsed slots, capped at MAX_ACCRUAL_DT_SLOTS = 10 per call.'},
+ {t:'Sweep candidates',tag:'',d:'Sweep up to 64 candidate accounts, sorted off-chain by leverage, riskiest first.'},
+ {t:'Liquidate',tag:'',d:'For each undercollateralized account: partial liquidation, re-check margin, full close if still underwater.'},
+ {t:'Collect fee',tag:'',d:'Collect the liquidation fee: 5 bps, capped at 50 SOL.'},
+ {t:'Update EWMA',tag:'',d:'Update the EWMA mark if the oracle is fresh.'}
+]);
+makeStepper('lifeSteps','lifeBody','lifePrev','lifeNext',[
+ {t:'Open',tag:'(base)',d:'Create the position PDA, deposit collateral, pre-fund ephemeral permission rent with EphemeralPermission::size_of(2).'},
+ {t:'Delegate',tag:'(base)',d:'Delegate the PDA to the TEE validator MTEWGu…3xzo through the delegation program.'},
+ {t:'Permission',tag:'(ER)',d:'CreateEphemeralPermissionCpi signed by the PDA seeds; then UpdateEphemeralPermissionCpi with is_private: true and members owner + auditor.'},
+ {t:'Authorize',tag:'(client)',d:'verifyTeeRpcIntegrity, then getAuthToken by signing a message. Requests go to the TEE endpoint with that token.'},
+ {t:'Trade',tag:'(ER)',d:'Submit sealed intents; the batch crosses; the crank funds and liquidates inside the TEE.'},
+ {t:'Commit',tag:'(ER → base)',d:'MagicIntentBundleBuilder.commit writes market aggregates and runs the Phoenix hedge as a post-commit action.'},
+ {t:'Exit',tag:'(ER → base)',d:'close_permission refunds rent, then commit_and_undelegate returns the PDA so collateral can be withdrawn on Solana.'}
+]);
+
+/* ---------- 12 access control ---------- */
+var H={t:'hidden',c:'no'},Y={t:'yes · on commit',c:'yes'},O={t:'yours only',c:'partial'},V={t:'visible',c:'yes'};
+var accessRows=[
+ ['Your position size','public',      {public:H,trader:O,other:H,auditor:V,authority:H}],
+ ['Other traders’ sizes','public',    {public:H,trader:H,other:H,auditor:V,authority:H}],
+ ['Liquidation prices','public',      {public:H,trader:O,other:H,auditor:V,authority:H}],
+ ['Intents before cross','public',    {public:H,trader:O,other:H,auditor:H,authority:H}],
+ ['Individual fills','public',        {public:H,trader:O,other:H,auditor:H,authority:H}],
+ ['Aggregate long/short OI','public', {public:Y,trader:Y,other:Y,auditor:Y,authority:Y}],
+ ['Insurance fund balance','public',  {public:Y,trader:Y,other:Y,auditor:Y,authority:Y}],
+ ['Funding rate','public',            {public:Y,trader:Y,other:Y,auditor:Y,authority:Y}],
+ ['Liquidation queue','public',       {public:H,trader:H,other:H,auditor:V,authority:H}]
+];
+var viewerMeta={
+ public:{name:'Public RPC',flags:'none · no auth token'},
+ trader:{name:'Trader (own PDA)',flags:'TX_LOGS | TX_BALANCES | TX_MESSAGE — on your own PDA'},
+ other:{name:'Other trader',flags:'flags on their own PDA only — none on yours'},
+ auditor:{name:'Risk auditor',flags:'TX_BALANCES'},
+ authority:{name:'Market authority',flags:'operates the market account — empty member list while trading runs'}
+};
+function viewer(k){
+  document.querySelectorAll('#viewerRow .btn').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-viewer')===k)});
+  $('viewerName').textContent=viewerMeta[k].name;
+  $('viewerFlags').textContent=viewerMeta[k].flags;
+  $('accessBody').innerHTML=accessRows.map(function(r){
+    var cell=r[2][k];
+    return '<tr><td>'+r[0]+'</td><td class="no">'+r[1]+' (today)</td><td class="'+cell.c+'">'+cell.t+'</td></tr>';
+  }).join('');
+}
+document.querySelectorAll('#viewerRow .btn').forEach(function(b){b.addEventListener('click',function(){viewer(b.getAttribute('data-viewer'))})});
+viewer('public');
+
+/* ---------- 13 batch cross ---------- */
+var defaultIntents=[
+ {h:'bf072644',side:'buy',size:40},{h:'caa0f8fe',side:'sell',size:25},
+ {h:'83f3dc05',side:'buy',size:18},{h:'88bcafe3',side:'sell',size:30},
+ {h:'ee9e0e8c',side:'buy',size:12},{h:'3a722410',side:'sell',size:9}
+];
+var intents=[],fills=null,view='public';
+function renderIntents(){
+  $('intentBody').innerHTML=intents.map(function(it,idx){
+    var reveal=view==='auditor'||(view==='yours'&&idx===0);
+    var side=reveal?it.side:'<span class="hidden">••••</span>';
+    var size=reveal?fmt(it.size):'<span class="hidden">••••</span>';
+    var fill=fills?(fills[idx]>0?fmt(Math.round(fills[idx]*100)/100)+' SOL':'0'):'pending';
+    return '<tr><td class="mono">#'+(idx+1)+'</td><td class="mono">'+it.h+(view==='yours'&&idx===0?' (you)':'')+'</td><td>'+side+'</td><td>'+size+'</td><td>'+fill+'</td></tr>';
+  }).join('');
+}
+function setView(v){
+  view=v;
+  $('viewPublic').className=v==='public'?'on':'';$('viewYours').className=v==='yours'?'on':'';$('viewAuditor').className=v==='auditor'?'on':'';
+  renderIntents();
+}
+$('viewPublic').addEventListener('click',function(){setView('public')});
+$('viewYours').addEventListener('click',function(){setView('yours')});
+$('viewAuditor').addEventListener('click',function(){setView('auditor')});
+function resetSim(src){
+  intents=src.map(function(o){return{h:o.h,side:o.side,size:o.size}});
+  fills=null;$('crossedOut').textContent='—';$('residOut').textContent='—';
+  $('publicLearns').textContent='Nothing yet. Intents are sealed until the batch crosses.';
+  renderIntents();
+}
+$('resetIntents').addEventListener('click',function(){resetSim(defaultIntents)});
+$('addIntents').addEventListener('click',function(){
+  var gen=[];
+  for(var i=0;i<6;i++){gen.push({h:Math.floor(Math.random()*0xffffffff).toString(16).padStart(8,'0'),side:Math.random()<0.5?'buy':'sell',size:5+Math.floor(Math.random()*56)})}
+  resetSim(gen);
+});
+$('crossBtn').addEventListener('click',function(){
+  var B=0,S=0;intents.forEach(function(it){if(it.side==='buy')B+=it.size;else S+=it.size});
+  var crossed=Math.min(B,S),heavy=Math.max(B,S),f=heavy>0?crossed/heavy:0;
+  fills=intents.map(function(it){
+    var isHeavy=(it.side==='buy'&&B>=S)||(it.side==='sell'&&S>B);
+    return isHeavy?it.size*f:it.size;
+  });
+  var mark=num('markUsd');
+  $('crossedOut').textContent=fmt(crossed)+' SOL';
+  $('residOut').textContent=heavy===crossed?'0 SOL':fmt(heavy-crossed)+' SOL '+(B>S?'buy':'sell');
+  $('publicLearns').textContent='Aggregates only, on commit: '+fmt(crossed)+' SOL crossed at $'+mark.toFixed(2)+', residual '+(fmt(heavy-crossed))+' SOL hedged on Phoenix. Individual intents stay sealed.';
+  renderIntents();
+});
+on('markUsd','input',function(){});
+resetSim(defaultIntents);
+})();
+</script>
+</body>
+</html>
