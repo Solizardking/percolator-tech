@@ -1,7 +1,7 @@
 // Better Auth for https://percolator.tech, mounted at basePath /api/auth.
 // Secrets come from the environment only. Never print, log, or commit them.
 import { betterAuth } from "better-auth";
-import { sentinel } from "@better-auth/infra";
+import { dash, sentinel } from "@better-auth/infra";
 import pg from "pg";
 
 export const TRUSTED_ORIGINS = [
@@ -103,6 +103,9 @@ export function createAuth(options = {}) {
           freeTrialAbuse: { enabled: true, action: "log" },
         },
       }),
+      // Dash ownership checks. apiKey only; the plugin default kvUrl is the KV origin.
+      // activityTracking stays off so lastActiveAt is not added. Secrets stay in the environment.
+      dash({ apiKey }),
     ],
   });
 }
