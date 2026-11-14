@@ -2,6 +2,8 @@
 
 Home page + install tracker for **$CLAWD Percolator**.
 
+Start with the [ecosystem and integration map](ECOSYSTEM.md) for repository roles, reusable components, compatibility limits, source snapshots and the sequenced integration backlog.
+
 - `GET /` — home (story, devnet proof, program IDs, mainnet Route A, live markets, install counter)
 - `GET /installs` — public stats page
 - `GET /api/health` — health check
